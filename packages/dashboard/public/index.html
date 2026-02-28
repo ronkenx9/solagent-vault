@@ -1021,6 +1021,63 @@
         drawAvatar('avatar-rebalancer', 'rebalancer');
 
         // ═══════════════════════════════════════════
+        // STATE & CONSTANTS
+        // ═══════════════════════════════════════════
+
+        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:3001'
+            : '';
+
+        const AGENT_MAP = {
+            'agent-momentum-01': { key: 'momentum', name: 'BLADE', cls: 'berserker', maxSol: 0.01 },
+            'agent-conservative-02': { key: 'conservative', name: 'WARD', cls: 'paladin', maxSol: 0.002 },
+            'agent-rebalancer-03': { key: 'rebalancer', name: 'SAGE', cls: 'alchemist', maxSol: 0.005 },
+            'momentum-trader': { key: 'momentum', name: 'BLADE', cls: 'berserker', maxSol: 0.01 },
+            'conservative-holder': { key: 'conservative', name: 'WARD', cls: 'paladin', maxSol: 0.002 },
+            'rebalancer': { key: 'rebalancer', name: 'SAGE', cls: 'alchemist', maxSol: 0.005 },
+        };
+
+        const AGENT_MAP_BY_KEY = {
+            momentum: { name: 'BLADE', cls: 'berserker' },
+            conservative: { name: 'WARD', cls: 'paladin' },
+            rebalancer: { name: 'SAGE', cls: 'alchemist' },
+        };
+
+        const state = {
+            balances: { momentum: 0, conservative: 0, rebalancer: 0 },
+            trades: { momentum: 0, conservative: 0, rebalancer: 0 },
+            limits: { momentum: 0.5, conservative: 0.5, rebalancer: 0.5 },
+            totalTrades: 0,
+            totalHolds: 0,
+            totalTicks: 0,
+            apiOnline: false,
+            sseConnected: false,
+        };
+
+        // ═══════════════════════════════════════════
+        // HEALPERS & UI
+        // ═══════════════════════════════════════════
+
+        function addLog(agentKey, cls, message, actionCls) {
+            const container = document.getElementById('logEntries');
+            if (!container) return;
+            const now = new Date();
+            const time = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `
+                <span class="log-time">${time}</span>
+                <span class="log-agent ${cls}">${AGENT_MAP_BY_KEY[agentKey]?.name || agentKey}</span>
+                <span class="log-action ${actionCls || ''}">${message}</span>
+            `;
+            container.appendChild(entry);
+            while (container.children.length > 50) container.removeChild(container.firstChild);
+            const log = document.getElementById('battleLog');
+            if (log) log.scrollTop = log.scrollHeight;
+        }
+
+        // ═══════════════════════════════════════════
         // LEVEL UP LOGIC (POLICY CONTROL)
         // ═══════════════════════════════════════════
 
@@ -1049,51 +1106,24 @@
                 if (response.ok) {
                     state.limits[data.key] = nextLimit;
                     document.getElementById(`limit-${data.key}`).innerText = `Limit: ${nextLimit.toFixed(2)} SOL`;
-                    addLog(data.key, data.cls, `SUCCESS! ${data.name} has LEVELED UP! New spending cap unlocked: ${nextLimit.toFixed(2)} SOL. 🌟`, 'success');
+                    addLog(data.key, data.cls, `SUCCESS! ${data.name} has LEVELED UP! New cap: ${nextLimit.toFixed(2)} SOL. 🌟`, 'success');
 
                     // Add a flash effect to the limit display
                     const limitEl = document.getElementById(`limit-${data.key}`);
-                    limitEl.style.color = '#fff';
-                    setTimeout(() => limitEl.style.color = '#00ff00', 500);
+                    if (limitEl) {
+                        limitEl.style.color = '#fff';
+                        setTimeout(() => limitEl.style.color = '#00ff00', 500);
+                    }
                 } else {
                     throw new Error('Policy update failed');
                 }
             } catch (err) {
                 console.error(err);
-                addLog(data.key, data.cls, `FAILED to level up ${data.name}. The Vault remains cautious.`, 'danger');
+                addLog(data.key, data.cls, `FAILED to level up ${data.name}.`, 'danger');
             } finally {
                 if (btn) btn.classList.remove('loading');
             }
         }
-
-        // Initialize limits in state
-        state.limits = { momentum: 0.5, conservative: 0.5, rebalancer: 0.5 };
-
-        // ═══════════════════════════════════════════
-        // STATE
-        // ═══════════════════════════════════════════
-
-        const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? 'http://localhost:3001'
-            : '';
-        const AGENT_MAP = {
-            'agent-momentum-01': { key: 'momentum', name: 'BLADE', cls: 'berserker', maxSol: 0.01 },
-            'agent-conservative-02': { key: 'conservative', name: 'WARD', cls: 'paladin', maxSol: 0.002 },
-            'agent-rebalancer-03': { key: 'rebalancer', name: 'SAGE', cls: 'alchemist', maxSol: 0.005 },
-            'momentum-trader': { key: 'momentum', name: 'BLADE', cls: 'berserker', maxSol: 0.01 },
-            'conservative-holder': { key: 'conservative', name: 'WARD', cls: 'paladin', maxSol: 0.002 },
-            'rebalancer': { key: 'rebalancer', name: 'SAGE', cls: 'alchemist', maxSol: 0.005 },
-        };
-
-        const state = {
-            balances: { momentum: 0, conservative: 0, rebalancer: 0 },
-            trades: { momentum: 0, conservative: 0, rebalancer: 0 },
-            totalTrades: 0,
-            totalHolds: 0,
-            totalTicks: 0,
-            apiOnline: false,
-            sseConnected: false,
-        };
 
         // ═══════════════════════════════════════════
         // UI UPDATES
@@ -1155,33 +1185,6 @@
             setTimeout(() => el.remove(), 1500);
         }
 
-        function addLog(agentKey, cls, message, actionCls) {
-            const container = document.getElementById('logEntries');
-            const now = new Date();
-            const time = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
-            const entry = document.createElement('div');
-            entry.className = 'log-entry';
-            entry.innerHTML = `
-    <span class="log-time">${time}</span>
-    <span class="log-agent ${cls}">${AGENT_MAP_BY_KEY[agentKey]?.name || agentKey}</span>
-    <span class="log-action ${actionCls || ''}">${message}</span>
-  `;
-            container.appendChild(entry);
-
-            // Keep max 50 entries
-            while (container.children.length > 50) container.removeChild(container.firstChild);
-
-            // Auto-scroll
-            const log = document.getElementById('battleLog');
-            log.scrollTop = log.scrollHeight;
-        }
-
-        const AGENT_MAP_BY_KEY = {
-            momentum: { name: 'BLADE', cls: 'berserker' },
-            conservative: { name: 'WARD', cls: 'paladin' },
-            rebalancer: { name: 'SAGE', cls: 'alchemist' },
-        };
 
         // ═══════════════════════════════════════════
         // API POLLING
