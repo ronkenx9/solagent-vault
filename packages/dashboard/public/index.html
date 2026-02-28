@@ -408,12 +408,55 @@
             background: rgba(0, 0, 0, 0.3);
             border: 2px solid var(--border-pixel);
             padding: 3px 8px;
-            font-size: 8px;
-            color: var(--text-dim);
+            font-size: 10px;
+            color: #aaa;
+            margin-bottom: 2px;
         }
 
         .equip-icon {
             font-size: 10px;
+            margin-right: 4px;
+        }
+
+        /* Level Up Button */
+        .level-up-btn {
+            margin-top: 10px;
+            padding: 4px 8px;
+            background: #444;
+            color: #ffd700;
+            border: 2px solid #666;
+            cursor: pointer;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            width: 100%;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .level-up-btn:hover {
+            background: #ffd700;
+            color: #000;
+            border-color: #fff;
+            transform: scale(1.02);
+        }
+
+        .level-up-btn:active {
+            transform: scale(0.98);
+        }
+
+        .level-up-btn.loading {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .limit-display {
+            font-size: 9px;
+            color: #00ff00;
+            margin-top: 4px;
+            text-align: center;
         }
 
         /* ═══ LAST ACTION ═══ */
@@ -743,9 +786,13 @@
                 </div>
             </div>
             <div class="equipment">
-                <div class="equip-slot"><span class="equip-icon">⚔️</span> 0.01 SOL max</div>
+                <div class="equip-slot"><span class="equip-icon">⚔️</span> Aggressive</div>
                 <div class="equip-slot"><span class="equip-icon">🎯</span> High risk</div>
             </div>
+            <div class="limit-display" id="limit-momentum">Limit: 0.50 SOL</div>
+            <button class="level-up-btn pixel-border" onclick="levelUp('agent-momentum-01')">
+                <span>🌟</span> LEVEL UP
+            </button>
             <div class="last-action" id="action-momentum">
                 <div class="action-type">💤 IDLE</div>
                 Waiting for quest to begin...
@@ -789,9 +836,13 @@
                 </div>
             </div>
             <div class="equipment">
-                <div class="equip-slot"><span class="equip-icon">🛡️</span> 0.002 SOL max</div>
+                <div class="equip-slot"><span class="equip-icon">🛡️</span> Conservative</div>
                 <div class="equip-slot"><span class="equip-icon">🧘</span> Low risk</div>
             </div>
+            <div class="limit-display" id="limit-conservative">Limit: 0.50 SOL</div>
+            <button class="level-up-btn pixel-border" onclick="levelUp('agent-conservative-02')">
+                <span>🌟</span> LEVEL UP
+            </button>
             <div class="last-action" id="action-conservative">
                 <div class="action-type">💤 IDLE</div>
                 Meditating before the quest...
@@ -835,9 +886,13 @@
                 </div>
             </div>
             <div class="equipment">
-                <div class="equip-slot"><span class="equip-icon">⚗️</span> 0.005 SOL max</div>
+                <div class="equip-slot"><span class="equip-icon">⚗️</span> Precision</div>
                 <div class="equip-slot"><span class="equip-icon">⚖️</span> Med risk</div>
             </div>
+            <div class="limit-display" id="limit-rebalancer">Limit: 0.50 SOL</div>
+            <button class="level-up-btn pixel-border" onclick="levelUp('agent-rebalancer-03')">
+                <span>🌟</span> LEVEL UP
+            </button>
             <div class="last-action" id="action-rebalancer">
                 <div class="action-type">💤 IDLE</div>
                 Preparing transmutation circle...
@@ -964,6 +1019,55 @@
         drawAvatar('avatar-momentum', 'momentum');
         drawAvatar('avatar-conservative', 'conservative');
         drawAvatar('avatar-rebalancer', 'rebalancer');
+
+        // ═══════════════════════════════════════════
+        // LEVEL UP LOGIC (POLICY CONTROL)
+        // ═══════════════════════════════════════════
+
+        async function levelUp(agentId) {
+            const data = AGENT_MAP[agentId];
+            if (!data) return;
+
+            const currentLimit = state.limits[data.key] || 0.5;
+            const nextLimit = currentLimit * 1.5; // Multiply by 1.5 for each level up
+
+            const btn = document.querySelector(`#card-${data.key} .level-up-btn`);
+            if (btn) btn.classList.add('loading');
+
+            addLog(data.key, data.cls, `Attempting to LEVEL UP ${data.name}... Increasing cap to ${nextLimit.toFixed(2)} SOL.`, '');
+
+            try {
+                const response = await fetch(`${API_BASE}/vault/policy`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        agent_id: agentId,
+                        max_lamports_per_tx: Math.floor(nextLimit * 1_000_000_000)
+                    })
+                });
+
+                if (response.ok) {
+                    state.limits[data.key] = nextLimit;
+                    document.getElementById(`limit-${data.key}`).innerText = `Limit: ${nextLimit.toFixed(2)} SOL`;
+                    addLog(data.key, data.cls, `SUCCESS! ${data.name} has LEVELED UP! New spending cap unlocked: ${nextLimit.toFixed(2)} SOL. 🌟`, 'success');
+
+                    // Add a flash effect to the limit display
+                    const limitEl = document.getElementById(`limit-${data.key}`);
+                    limitEl.style.color = '#fff';
+                    setTimeout(() => limitEl.style.color = '#00ff00', 500);
+                } else {
+                    throw new Error('Policy update failed');
+                }
+            } catch (err) {
+                console.error(err);
+                addLog(data.key, data.cls, `FAILED to level up ${data.name}. The Vault remains cautious.`, 'danger');
+            } finally {
+                if (btn) btn.classList.remove('loading');
+            }
+        }
+
+        // Initialize limits in state
+        state.limits = { momentum: 0.5, conservative: 0.5, rebalancer: 0.5 };
 
         // ═══════════════════════════════════════════
         // STATE
