@@ -7,8 +7,8 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
 }
 import express, { type Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { Vault } from '@solagent/vault-core';
-import type { Intent, IntentAction } from '@solagent/vault-core';
+import { Vault } from '../../vault-core/src/index.js';
+import type { Intent, IntentAction } from '../../vault-core/src/types.js';
 
 const app: Application = express();
 app.use(cors());
