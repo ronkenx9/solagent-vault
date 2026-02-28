@@ -1,6 +1,10 @@
 import dotenv from 'dotenv';
 import { resolve } from 'path';
-dotenv.config({ path: resolve(process.cwd(), '../../.env') });
+
+// Load environment variables locally
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+    dotenv.config({ path: resolve(process.cwd(), '../../.env') });
+}
 import express, { type Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { Vault } from '@solagent/vault-core';
@@ -14,9 +18,14 @@ app.use(express.json());
 app.use(express.static(resolve(process.cwd(), '../dashboard/public')));
 
 // --- Vault instance ---
-const vault = new Vault({
-    rpcUrl: process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
-});
+let vault: any;
+try {
+    vault = new Vault({
+        rpcUrl: process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
+    });
+} catch (err) {
+    console.error('[VaultAPI] Failed to initialize Vault:', err);
+}
 
 // --- SSE clients ---
 const sseClients: Set<Response> = new Set();
@@ -32,7 +41,7 @@ export function broadcastEvent(event: any) {
 }
 
 // Forward vault core events
-vault.on('event', (event) => broadcastEvent(event));
+vault.on('event', (event: any) => broadcastEvent(event));
 
 /**
  * POST /vault/broadcast — Accept events from the orchestrator process
@@ -227,7 +236,8 @@ app.get('/vault/events', (req: Request, res: Response) => {
  */
 app.get('/vault/health', (_req: Request, res: Response) => {
     return res.json({
-        status: 'ok',
+        status: vault ? 'ok' : 'error',
+        vault_initialized: !!vault,
         network: 'devnet',
         timestamp: Date.now(),
         sseClients: sseClients.size,

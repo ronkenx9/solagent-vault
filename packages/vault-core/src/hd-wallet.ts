@@ -2,11 +2,7 @@ import * as bip39 from 'bip39';
 import { derivePath } from 'ed25519-hd-key';
 import { Keypair, PublicKey } from '@solana/web3.js';
 
-const MASTER_SEED = process.env.VAULT_MASTER_SEED;
-
-if (!MASTER_SEED) {
-  throw new Error('VAULT_MASTER_SEED environment variable is required');
-}
+const MASTER_SEED = process.env.VAULT_MASTER_SEED || process.env.MASTER_SEED;
 
 /**
  * Derives a deterministic keypair for an agent from the master seed.
@@ -14,6 +10,10 @@ if (!MASTER_SEED) {
  * This allows one seed to spawn unlimited isolated agent wallets.
  */
 export function deriveAgentKeypair(agentId: string): Keypair {
+  if (!MASTER_SEED) {
+    throw new Error('MISSION_CRITICAL: VAULT_MASTER_SEED or MASTER_SEED environment variable is missing. Check your deployment settings.');
+  }
+
   const index = hashAgentId(agentId);
   const path = `m/44'/501'/${index}'/0'`;
 
