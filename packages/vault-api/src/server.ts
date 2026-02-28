@@ -242,20 +242,24 @@ function getDFlowProgramForAction(action: string): string {
 
 // --- Start server ---
 const PORT = parseInt(process.env.VAULT_API_PORT || '3001', 10);
-app.listen(PORT, () => {
-    console.log(`\n🔐 SolAgent Vault API running on http://localhost:${PORT}`);
-    console.log(`   Network: devnet`);
-    console.log(`   Endpoints:`);
-    console.log(`     POST /vault/execute       — Execute transaction intent`);
-    console.log(`     GET  /vault/balance/:id   — Get agent balance`);
-    console.log(`     GET  /vault/wallet/:id    — Get agent wallet address`);
-    console.log(`     POST /vault/policy        — Register agent policy`);
-    console.log(`     GET  /vault/policy/:id    — Get agent policy`);
-    console.log(`     POST /vault/pause/:id     — Emergency pause`);
-    console.log(`     POST /vault/resume/:id    — Resume agent`);
-    console.log(`     POST /vault/airdrop/:id   — Devnet airdrop`);
-    console.log(`     GET  /vault/events        — SSE event stream`);
-    console.log(`     GET  /vault/health        — Health check\n`);
-});
 
-export { app, vault };
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log(`\n🔐 SolAgent Vault API running on http://localhost:${PORT}`);
+        console.log(`   Network: devnet`);
+        console.log(`   Endpoints:`);
+        console.log(`     POST /vault/execute       — Execute transaction intent`);
+        console.log(`     GET  /vault/balance/:id   — Get agent balance`);
+        console.log(`     GET  /vault/wallet/:id    — Get agent wallet address`);
+        console.log(`     POST /vault/policy        — Register agent policy`);
+        console.log(`     GET  /vault/policy/:id    — Get agent policy`);
+        console.log(`     POST /vault/pause/:id     — Emergency pause`);
+        console.log(`     POST /vault/resume/:id    — Resume agent`);
+        console.log(`     POST /vault/airdrop/:id   — Devnet airdrop`);
+        console.log(`     GET  /vault/events        — SSE event stream`);
+        console.log(`     GET  /vault/health        — Health check\n`);
+    });
+}
+
+export default app;
+export { vault };
