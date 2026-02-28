@@ -1,6 +1,7 @@
 import 'dotenv/config';
-import { Orchestrator, createDefaultAgentConfigs } from './src/orchestrator.js';
-import { Dashboard } from '@solagent/dashboard';
+import { Orchestrator, createDefaultAgentConfigs } from './orchestrator.js';
+// Dashboard is optional — comment out if not available
+// import { Dashboard } from '@solagent/dashboard';
 
 // Check for required environment variables
 const requiredEnvVars = ['VAULT_MASTER_SEED'];
@@ -28,11 +29,14 @@ if (!hasOpenAI && !hasAnthropic) {
 async function main() {
   console.log('\n🚀 Starting SolAgent Vault...\n');
 
-  // Create LLM config
+  // Create LLM config — supports Groq via OPENAI_BASE_URL
   const llmConfig = {
     provider: hasOpenAI ? 'openai' as const : 'anthropic' as const,
-    model: hasOpenAI ? 'gpt-4o' : 'claude-sonnet-4-20250514',
+    model: hasOpenAI
+      ? (process.env.LLM_MODEL || 'llama-3.3-70b-versatile')
+      : 'claude-sonnet-4-20250514',
     apiKey: hasOpenAI ? process.env.OPENAI_API_KEY! : process.env.ANTHROPIC_API_KEY!,
+    baseURL: process.env.OPENAI_BASE_URL || undefined,
   };
 
   // Create orchestrator
@@ -40,26 +44,28 @@ async function main() {
     llmConfig,
     rpcUrl: process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
     agents: createDefaultAgentConfigs(),
-    tickIntervalSeconds: 30,
+    tickIntervalSeconds: 120,
   });
 
-  // Create dashboard
-  const dashboard = new Dashboard();
+  // Dashboard is optional — using SSE via vault-api server instead
+  // const dashboard = new Dashboard();
+  // const agentConfigs = createDefaultAgentConfigs();
+  // dashboard.initialize(
+  //   agentConfigs.map((c: any) => c.id),
+  //   agentConfigs.map((c: any) => c.strategy.name)
+  // );
 
-  // Initialize dashboard with agent info
-  const agentConfigs = createDefaultAgentConfigs();
-  dashboard.initialize(
-    agentConfigs.map(c => c.id),
-    agentConfigs.map(c => c.strategy.name)
-  );
-
-  // Forward orchestrator events to dashboard
+  // Forward orchestrator events to console AND to vault-api SSE broadcast
+  const VAULT_API = process.env.VAULT_API_URL || 'http://localhost:3001';
   orchestrator.on('event', (event: any) => {
-    dashboard.handleEvent({
-      type: event.type as any,
-      agentId: event.agentId || 'system',
-      data: event.data,
-      timestamp: event.timestamp,
+    console.log(`[Event] ${event.type}`, JSON.stringify(event.data).slice(0, 120));
+    // POST to vault-api so SSE clients (dashboard) receive the event
+    fetch(`${VAULT_API}/vault/broadcast`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(event),
+    }).catch((err) => {
+      console.warn(`[Orchestrator] Failed to broadcast event: ${err.message}`);
     });
   });
 
@@ -67,7 +73,6 @@ async function main() {
   process.on('SIGINT', async () => {
     console.log('\n\n🛑 Shutting down...');
     await orchestrator.stop();
-    dashboard.stop();
     process.exit(0);
   });
 

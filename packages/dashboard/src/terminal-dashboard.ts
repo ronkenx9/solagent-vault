@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 
 export interface DashboardEvent {
-  type: 'tx_executed' | 'tx_blocked' | 'reasoning' | 'agent_paused' | 'agent_resumed' | 'tick' | 'decision';
+  type: 'tx_executed' | 'tx_blocked' | 'tx_result' | 'reasoning' | 'agent_paused' | 'agent_resumed' | 'tick' | 'decision';
   agentId: string;
   data: unknown;
   timestamp: number;
@@ -169,8 +169,8 @@ export class Dashboard {
       // Show last transaction
       if (agent.lastTx) {
         const txStatus = agent.lastTx.status === 'confirmed' ? chalk.green('✓') :
-                        agent.lastTx.status === 'blocked' ? chalk.red('✗') :
-                        chalk.yellow('?');
+          agent.lastTx.status === 'blocked' ? chalk.red('✗') :
+            chalk.yellow('?');
         const sig = agent.lastTx.signature.substring(0, 12) + '...';
         console.log(
           chalk.white('│               │             │          │  Last TX: ') +

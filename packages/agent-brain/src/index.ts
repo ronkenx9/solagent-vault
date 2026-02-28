@@ -23,7 +23,7 @@ export const DEFAULT_STRATEGIES = {
     description: 'Aggressively trades based on short-term price movements',
     riskTolerance: 'high' as const,
     maxSwapPercent: 0.5,      // Up to 50% of portfolio
-    minConfidenceThreshold: 0.6,
+    minConfidenceThreshold: 0.5,  // Devnet demo: trades on moderate signals
     targetTokens: ['SOL', 'USDC'],
   },
   CONSERVATIVE_HOLDER: {
@@ -32,7 +32,7 @@ export const DEFAULT_STRATEGIES = {
     description: 'Makes small, safe trades only when very confident',
     riskTolerance: 'low' as const,
     maxSwapPercent: 0.1,      // Max 10% of portfolio
-    minConfidenceThreshold: 0.8,
+    minConfidenceThreshold: 0.65, // Devnet demo: still conservative but will act on clear signals
     targetTokens: ['SOL', 'USDC'],
   },
   REBALANCER: {
@@ -41,7 +41,7 @@ export const DEFAULT_STRATEGIES = {
     description: 'Maintains target allocation between SOL and USDC',
     riskTolerance: 'medium' as const,
     maxSwapPercent: 0.25,    // Max 25% of portfolio
-    minConfidenceThreshold: 0.7,
+    minConfidenceThreshold: 0.45, // Devnet demo: triggers on "soft" signals to show fallback flow
     targetTokens: ['SOL', 'USDC'],
   },
 } as const;

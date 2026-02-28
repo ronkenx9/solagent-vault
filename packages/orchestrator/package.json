@@ -6,7 +6,7 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "dev": "tsx watch src/run.ts",
+    "dev": "tsx watch --env-file=../../.env src/run.ts",
     "start": "node dist/run.js",
     "test": "vitest"
   },

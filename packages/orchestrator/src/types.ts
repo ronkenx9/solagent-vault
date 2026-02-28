@@ -6,6 +6,7 @@ export interface OrchestratorConfig {
   vault: Vault;
   agents: OrchestratorAgentConfig[];
   tickIntervalSeconds: number;
+  rpcUrl?: string;
 }
 
 export interface OrchestratorAgentConfig {

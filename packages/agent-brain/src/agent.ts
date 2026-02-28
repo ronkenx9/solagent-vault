@@ -95,10 +95,20 @@ export class AgentBrain extends EventEmitter {
 
       // 2. Fetch market context
       const contextData = await fetchMarketContext(walletAddress, balance);
-      const context: MarketContext = {
-        ...contextData as MarketContext,
+      // Get the agent's policy if available (for spend limit injection)
+      const agentPolicy = (this.vault as any).ruleEngine?.getPolicy?.(agentId);
+      const maxSwapLamports = agentPolicy?.maxLamportsPerTx ?? 250_000_000;
+
+      // Build enriched context for LLM
+      const context = {
+        ...(contextData as any),
         agentId,
         strategy,
+        policy: {
+          maxSwapLamports,
+          maxSwapSol: maxSwapLamports / 1e9,
+          note: `You MUST NOT set amountLamports above ${maxSwapLamports} or the transaction will be blocked.`,
+        },
       };
 
       // 3. Emit tick event
@@ -106,7 +116,8 @@ export class AgentBrain extends EventEmitter {
 
       // 4. Ask LLM to reason and decide
       const contextJson = JSON.stringify(context, null, 2);
-      const decision = await this.llm.makeDecision(contextJson);
+      console.log(`[AgentBrain:${agentId}] signal: ${(contextData as any).market?.priceSignal} | canTrade: ${(contextData as any).tradingHints?.canTrade} | maxSol: ${maxSwapLamports / 1e9}`);
+      const decision = await this.llm.makeDecision(contextJson, agentId);
 
       // 5. Emit reasoning event (for dashboard visibility)
       this.emitEvent('reasoning', {
@@ -127,10 +138,10 @@ export class AgentBrain extends EventEmitter {
       }
 
       // 7. Check max swap percentage
-      const maxSwapLamports = Math.floor(balance.sol * strategy.maxSwapPercent * 1e9);
-      if (decision.amountLamports && decision.amountLamports > maxSwapLamports) {
-        decision.amountLamports = maxSwapLamports;
-        console.log(`[AgentBrain:${agentId}] Capped amount to ${maxSwapLamports} lamports`);
+      const percentageCap = Math.floor(balance.sol * strategy.maxSwapPercent * 1e9);
+      if (decision.amountLamports && decision.amountLamports > percentageCap) {
+        decision.amountLamports = percentageCap;
+        console.log(`[AgentBrain:${agentId}] Capped amount to ${percentageCap} lamports (${strategy.maxSwapPercent * 100}% of balance)`);
       }
 
       // 8. Execute if action is SWAP
@@ -189,5 +200,7 @@ export class AgentBrain extends EventEmitter {
       timestamp: Date.now(),
     };
     this.emit('event', event);
+    // Also emit on the vault so listeners like vault-api pick it up
+    this.vault.emit('event', event);
   }
 }

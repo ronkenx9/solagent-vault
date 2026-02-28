@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚔️ SolAgent Vault — The Dungeon</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Silkscreen:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        /* ═══════════════════════════════════════════
+       PIXEL RPG DESIGN SYSTEM
+       ═══════════════════════════════════════════ */
+        :root {
+            --bg-deep: #0c0e1a;
+            --bg-dungeon: #151834;
+            --bg-panel: #1a1f3d;
+            --bg-panel-hover: #222850;
+            --border-pixel: #2a3060;
+            --border-gold: #c8a030;
+            --gold: #ffd700;
+            --gold-dark: #b8860b;
+            --hp-green: #22dd44;
+            --hp-green-dim: #115522;
+            --mp-blue: #4488ff;
+            --mp-blue-dim: #223366;
+            --xp-purple: #bb77ff;
+            --danger: #ff4455;
+            --text-parchment: #e8d5a3;
+            --text-dim: #7a7090;
+            --text-bright: #fff8e0;
+            --berserker: #ff5544;
+            --paladin: #44aaff;
+            --alchemist: #aa66ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg-deep);
+            color: var(--text-parchment);
+            font-family: 'Silkscreen', cursive;
+            min-height: 100vh;
+            overflow-x: hidden;
+            image-rendering: pixelated;
+        }
+
+        /* ═══ PIXEL BORDER UTILITY ═══ */
+        .pixel-border {
+            border: 4px solid var(--border-pixel);
+            box-shadow:
+                inset 2px 2px 0 rgba(255, 255, 255, 0.05),
+                inset -2px -2px 0 rgba(0, 0, 0, 0.3),
+                4px 4px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        .pixel-border-gold {
+            border: 4px solid var(--border-gold);
+            box-shadow:
+                inset 2px 2px 0 rgba(255, 215, 0, 0.15),
+                inset -2px -2px 0 rgba(0, 0, 0, 0.3),
+                0 0 20px rgba(255, 215, 0, 0.08),
+                4px 4px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        /* ═══ SCANLINE OVERLAY ═══ */
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: repeating-linear-gradient(transparent 0px,
+                    transparent 2px,
+                    rgba(0, 0, 0, 0.08) 2px,
+                    rgba(0, 0, 0, 0.08) 4px);
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* ═══ HEADER / TITLE BANNER ═══ */
+        .title-banner {
+            text-align: center;
+            padding: 28px 20px 20px;
+            position: relative;
+        }
+
+        .title-banner h1 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 22px;
+            color: var(--gold);
+            text-shadow:
+                2px 2px 0 var(--gold-dark),
+                4px 4px 0 rgba(0, 0, 0, 0.6);
+            letter-spacing: 3px;
+            animation: titlePulse 3s ease-in-out infinite;
+        }
+
+        @keyframes titlePulse {
+
+            0%,
+            100% {
+                text-shadow: 2px 2px 0 var(--gold-dark), 4px 4px 0 rgba(0, 0, 0, 0.6), 0 0 10px rgba(255, 215, 0, 0.15);
+            }
+
+            50% {
+                text-shadow: 2px 2px 0 var(--gold-dark), 4px 4px 0 rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.3);
+            }
+        }
+
+        .title-sub {
+            font-family: 'Silkscreen', cursive;
+            font-size: 10px;
+            color: var(--text-dim);
+            margin-top: 8px;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        .coins-display {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-panel);
+            padding: 6px 16px;
+            margin-top: 12px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 11px;
+            color: var(--gold);
+        }
+
+        .coin-icon {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            background: var(--gold);
+            border-radius: 50%;
+            box-shadow: inset -2px -2px 0 var(--gold-dark);
+            animation: coinSpin 1.5s ease-in-out infinite;
+        }
+
+        @keyframes coinSpin {
+
+            0%,
+            100% {
+                transform: scaleX(1);
+            }
+
+            50% {
+                transform: scaleX(0.3);
+            }
+        }
+
+        /* ═══ STATUS BAR ═══ */
+        .status-bar {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            padding: 8px 20px;
+            font-size: 9px;
+            color: var(--text-dim);
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        .status-dot.online {
+            background: var(--hp-green);
+        }
+
+        .status-dot.offline {
+            background: var(--danger);
+            animation: none;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        /* ═══ PARTY GRID ═══ */
+        .party-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            padding: 0 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 800px) {
+            .party-grid {
+                grid-template-columns: 1fr;
+                max-width: 420px;
+            }
+        }
+
+        /* ═══ CHARACTER CARD ═══ */
+        .char-card {
+            background: var(--bg-panel);
+            padding: 16px;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .char-card:hover {
+            background: var(--bg-panel-hover);
+            transform: translateY(-2px);
+        }
+
+        .char-card.acting {
+            animation: cardFlash 0.6s ease-out;
+        }
+
+        @keyframes cardFlash {
+            0% {
+                box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(255, 215, 0, 0.3);
+            }
+
+            100% {
+                box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
+            }
+        }
+
+        .char-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        /* ═══ PIXEL AVATAR ═══ */
+        .char-avatar {
+            width: 48px;
+            height: 48px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .char-avatar canvas {
+            width: 48px;
+            height: 48px;
+            image-rendering: pixelated;
+        }
+
+        .char-class-badge {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            font-size: 14px;
+            filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.8));
+        }
+
+        .char-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .char-name {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .char-name.berserker {
+            color: var(--berserker);
+        }
+
+        .char-name.paladin {
+            color: var(--paladin);
+        }
+
+        .char-name.alchemist {
+            color: var(--alchemist);
+        }
+
+        .char-class {
+            font-size: 8px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .char-level {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            color: var(--gold);
+            margin-top: 2px;
+        }
+
+        /* ═══ STAT BARS ═══ */
+        .stat-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin: 12px 0;
+        }
+
+        .stat-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-label {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 7px;
+            width: 24px;
+            flex-shrink: 0;
+        }
+
+        .stat-label.hp {
+            color: var(--hp-green);
+        }
+
+        .stat-label.mp {
+            color: var(--mp-blue);
+        }
+
+        .stat-label.xp {
+            color: var(--xp-purple);
+        }
+
+        .stat-bar-track {
+            flex: 1;
+            height: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid var(--border-pixel);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            transition: width 1s ease-out;
+            position: relative;
+        }
+
+        .stat-bar-fill.hp {
+            background: var(--hp-green);
+            box-shadow: inset 0 -2px 0 var(--hp-green-dim);
+        }
+
+        .stat-bar-fill.mp {
+            background: var(--mp-blue);
+            box-shadow: inset 0 -2px 0 var(--mp-blue-dim);
+        }
+
+        .stat-bar-fill.xp {
+            background: var(--xp-purple);
+            box-shadow: inset 0 -2px 0 #5533aa;
+        }
+
+        .stat-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .stat-value {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 7px;
+            width: 70px;
+            text-align: right;
+            flex-shrink: 0;
+            color: var(--text-parchment);
+        }
+
+        /* ═══ EQUIPMENT / POLICY SLOTS ═══ */
+        .equipment {
+            display: flex;
+            gap: 6px;
+            margin: 10px 0 6px;
+            flex-wrap: wrap;
+        }
+
+        .equip-slot {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid var(--border-pixel);
+            padding: 3px 8px;
+            font-size: 8px;
+            color: var(--text-dim);
+        }
+
+        .equip-icon {
+            font-size: 10px;
+        }
+
+        /* ═══ LAST ACTION ═══ */
+        .last-action {
+            margin-top: 8px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-left: 3px solid var(--border-pixel);
+            font-size: 9px;
+            color: var(--text-dim);
+            min-height: 36px;
+        }
+
+        .last-action.swap {
+            border-left-color: var(--gold);
+        }
+
+        .last-action.hold {
+            border-left-color: var(--mp-blue);
+        }
+
+        .last-action.thinking {
+            border-left-color: var(--xp-purple);
+        }
+
+        .action-type {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 7px;
+            margin-bottom: 4px;
+        }
+
+        /* ═══ DAMAGE NUMBERS ═══ */
+        .damage-float {
+            position: absolute;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 12px;
+            color: var(--gold);
+            pointer-events: none;
+            animation: damageFloat 1.5s ease-out forwards;
+            z-index: 100;
+            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.8);
+        }
+
+        @keyframes damageFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+
+            30% {
+                transform: translateY(-20px) scale(1.3);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.8);
+            }
+        }
+
+        /* ═══ BATTLE LOG (RPG DIALOGUE BOX) ═══ */
+        .battle-log-container {
+            max-width: 1200px;
+            margin: 20px auto 30px;
+            padding: 0 20px;
+        }
+
+        .battle-log {
+            background: var(--bg-dungeon);
+            padding: 16px;
+            min-height: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .battle-log-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 9px;
+            color: var(--gold);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .battle-log-title::after {
+            content: '';
+            flex: 1;
+            height: 2px;
+            background: linear-gradient(to right, var(--border-gold), transparent);
+        }
+
+        .log-entry {
+            padding: 4px 0;
+            font-size: 9px;
+            line-height: 1.6;
+            color: var(--text-dim);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            animation: logAppear 0.3s ease-out;
+        }
+
+        @keyframes logAppear {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .log-time {
+            color: var(--text-dim);
+            opacity: 0.5;
+            font-size: 7px;
+            margin-right: 6px;
+        }
+
+        .log-agent {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 7px;
+            margin-right: 4px;
+        }
+
+        .log-agent.berserker {
+            color: var(--berserker);
+        }
+
+        .log-agent.paladin {
+            color: var(--paladin);
+        }
+
+        .log-agent.alchemist {
+            color: var(--alchemist);
+        }
+
+        .log-action {
+            color: var(--text-parchment);
+        }
+
+        .log-action.gold {
+            color: var(--gold);
+        }
+
+        .log-action.danger {
+            color: var(--danger);
+        }
+
+        .log-action.success {
+            color: var(--hp-green);
+        }
+
+        /* ═══ THINKING BUBBLE ═══ */
+        .thinking-indicator {
+            display: inline-flex;
+            gap: 3px;
+            margin-left: 4px;
+        }
+
+        .think-dot {
+            width: 4px;
+            height: 4px;
+            background: var(--xp-purple);
+            animation: thinkBounce 1.2s ease-in-out infinite;
+        }
+
+        .think-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .think-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes thinkBounce {
+
+            0%,
+            80%,
+            100% {
+                transform: translateY(0);
+                opacity: 0.3;
+            }
+
+            40% {
+                transform: translateY(-4px);
+                opacity: 1;
+            }
+        }
+
+        /* ═══ GROUND DECORATION ═══ */
+        .ground-deco {
+            text-align: center;
+            padding: 10px;
+            font-size: 8px;
+            color: var(--text-dim);
+            opacity: 0.3;
+            letter-spacing: 6px;
+        }
+
+        /* ═══ SCROLLBAR ═══ */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-deep);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-pixel);
+            border: 2px solid var(--bg-deep);
+        }
+
+        /* ═══ IDLE ANIMATION ON AVATARS ═══ */
+        .idle-bounce {
+            animation: idleBounce 2s ease-in-out infinite;
+        }
+
+        @keyframes idleBounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-3px);
+            }
+        }
+
+        /* ═══ PARTY STATS FOOTER ═══ */
+        .party-stats {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            padding: 12px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .party-stat {
+            text-align: center;
+        }
+
+        .party-stat-value {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 14px;
+            color: var(--gold);
+        }
+
+        .party-stat-label {
+            font-size: 8px;
+            color: var(--text-dim);
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ═══ TITLE ═══ -->
+    <div class="title-banner">
+        <h1>⚔️ THE VAULT ⚔️</h1>
+        <div class="title-sub">autonomous agents · solana devnet</div>
+        <div class="coins-display pixel-border">
+            <span class="coin-icon"></span>
+            <span id="totalSol">0.000</span> SOL
+        </div>
+    </div>
+
+    <!-- ═══ STATUS ═══ -->
+    <div class="status-bar">
+        <div class="status-item">
+            <div class="status-dot" id="apiDot"></div>
+            <span id="apiStatus">connecting...</span>
+        </div>
+        <div class="status-item">
+            <div class="status-dot" id="sseDot"></div>
+            <span id="sseStatus">events: waiting</span>
+        </div>
+        <div class="status-item">
+            <span>⏱️ tick: 30s</span>
+        </div>
+    </div>
+
+    <!-- ═══ PARTY ═══ -->
+    <div class="party-grid" id="partyGrid">
+
+        <!-- BLADE the Berserker -->
+        <div class="char-card pixel-border-gold" id="card-momentum" data-agent="agent-momentum-01">
+            <div class="char-header">
+                <div class="char-avatar idle-bounce">
+                    <canvas id="avatar-momentum" width="16" height="16"></canvas>
+                    <span class="char-class-badge">🗡️</span>
+                </div>
+                <div class="char-info">
+                    <div class="char-name berserker">BLADE</div>
+                    <div class="char-class">Berserker · momentum trader</div>
+                    <div class="char-level">LV 1 &nbsp;⚡ AGR</div>
+                </div>
+            </div>
+            <div class="stat-bars">
+                <div class="stat-row">
+                    <span class="stat-label hp">HP</span>
+                    <div class="stat-bar-track pixel-border">
+                        <div class="stat-bar-fill hp" id="hp-momentum" style="width:0%"></div>
+                    </div>
+                    <span class="stat-value" id="hpVal-momentum">0 / 2.5 SOL</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label mp">MP</span>
+                    <div class="stat-bar-track pixel-border">
+                        <div class="stat-bar-fill mp" id="mp-momentum" style="width:100%"></div>
+                    </div>
+                    <span class="stat-value">3 tx/min</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label xp">XP</span>
+                    <div class="stat-bar-track pixel-border">
+                        <div class="stat-bar-fill xp" id="xp-momentum" style="width:0%"></div>
+                    </div>
+                    <span class="stat-value" id="xpVal-momentum">0 trades</span>
+                </div>
+            </div>
+            <div class="equipment">
+                <div class="equip-slot"><span class="equip-icon">⚔️</span> 0.01 SOL max</div>
+                <div class="equip-slot"><span class="equip-icon">🎯</span> High risk</div>
+            </div>
+            <div class="last-action" id="action-momentum">
+                <div class="action-type">💤 IDLE</div>
+                Waiting for quest to begin...
+            </div>
+        </div>
+
+        <!-- WARD the Paladin -->
+        <div class="char-card pixel-border-gold" id="card-conservative" data-agent="agent-conservative-02">
+            <div class="char-header">
+                <div class="char-avatar idle-bounce" style="animation-delay: 0.5s;">
+                    <canvas id="avatar-conservative" width="16" height="16"></canvas>
+                    <span class="char-class-badge">🛡️</span>
+                </div>
+                <div class="char-info">
+                    <div class="char-name paladin">WARD</div>
+                    <div class="char-class">Paladin · conservative holder</div>
+                    <div class="char-level">LV 1 &nbsp;🛡️ DEF</div>
+                </div>
+            </div>
+            <div class="stat-bars">
+                <div class="stat-row">
+                    <span class="stat-label hp">HP</span>
+                    <div class="stat-bar-track pixel-border">
+                        <div class="stat-bar-fill hp" id="hp-conservative" style="width:0%"></div>
+                    </div>
+                    <span class="stat-value" id="hpVal-conservative">0 / 0.5 SOL</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label mp">MP</span>
+                    <div class="stat-bar-track pixel-border">
+                        <div class="stat-bar-fill mp" id="mp-conservative" style="width:100%"></div>
+                    </div>
+                    <span class="stat-value">1 tx/min</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label xp">XP</span>
+                    <div class="stat-bar-track pixel-border">
+                        <div class="stat-bar-fill xp" id="xp-conservative" style="width:0%"></div>
+                    </div>
+                    <span class="stat-value" id="xpVal-conservative">0 trades</span>
+                </div>
+            </div>
+            <div class="equipment">
+                <div class="equip-slot"><span class="equip-icon">🛡️</span> 0.002 SOL max</div>
+                <div class="equip-slot"><span class="equip-icon">🧘</span> Low risk</div>
+            </div>
+            <div class="last-action" id="action-conservative">
+                <div class="action-type">💤 IDLE</div>
+                Meditating before the quest...
+            </div>
+        </div>
+
+        <!-- SAGE the Alchemist -->
+        <div class="char-card pixel-border-gold" id="card-rebalancer" data-agent="agent-rebalancer-03">
+            <div class="char-header">
+                <div class="char-avatar idle-bounce" style="animation-delay: 1s;">
+                    <canvas id="avatar-rebalancer" width="16" height="16"></canvas>
+                    <span class="char-class-badge">⚗️</span>
+                </div>
+                <div class="char-info">
+                    <div class="char-name alchemist">SAGE</div>
+                    <div class="char-class">Alchemist · portfolio rebalancer</div>
+                    <div class="char-level">LV 1 &nbsp;⚖️ BAL</div>
+                </div>
+            </div>
+            <div class="stat-bars">
+                <div class="stat-row">
+                    <span class="stat-label hp">HP</span>
+                    <div class="stat-bar-track pixel-border">
+                        <div class="stat-bar-fill hp" id="hp-rebalancer" style="width:0%"></div>
+                    </div>
+                    <span class="stat-value" id="hpVal-rebalancer">0 / 5.0 SOL</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label mp">MP</span>
+                    <div class="stat-bar-track pixel-border">
+                        <div class="stat-bar-fill mp" id="mp-rebalancer" style="width:100%"></div>
+                    </div>
+                    <span class="stat-value">2 tx/min</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label xp">XP</span>
+                    <div class="stat-bar-track pixel-border">
+                        <div class="stat-bar-fill xp" id="xp-rebalancer" style="width:0%"></div>
+                    </div>
+                    <span class="stat-value" id="xpVal-rebalancer">0 trades</span>
+                </div>
+            </div>
+            <div class="equipment">
+                <div class="equip-slot"><span class="equip-icon">⚗️</span> 0.005 SOL max</div>
+                <div class="equip-slot"><span class="equip-icon">⚖️</span> Med risk</div>
+            </div>
+            <div class="last-action" id="action-rebalancer">
+                <div class="action-type">💤 IDLE</div>
+                Preparing transmutation circle...
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ PARTY STATS ═══ -->
+    <div class="party-stats">
+        <div class="party-stat">
+            <div class="party-stat-value" id="totalTrades">0</div>
+            <div class="party-stat-label">Quests Complete</div>
+        </div>
+        <div class="party-stat">
+            <div class="party-stat-value" id="totalHolds">0</div>
+            <div class="party-stat-label">Defended</div>
+        </div>
+        <div class="party-stat">
+            <div class="party-stat-value" id="totalTicks">0</div>
+            <div class="party-stat-label">Adventures</div>
+        </div>
+    </div>
+
+    <!-- ═══ BATTLE LOG ═══ -->
+    <div class="battle-log-container">
+        <div class="battle-log pixel-border-gold" id="battleLog">
+            <div class="battle-log-title">📜 BATTLE LOG</div>
+            <div id="logEntries">
+                <div class="log-entry">
+                    <span class="log-time">00:00</span>
+                    <span class="log-action">The party assembles at the entrance of the Vault...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ground-deco">· · · ◆ · · · ◆ · · · ◆ · · ·</div>
+
+    <script>
+        // ═══════════════════════════════════════════
+        // PIXEL AVATAR RENDERER
+        // ═══════════════════════════════════════════
+
+        const AVATARS = {
+            momentum: {
+                // Berserker — red warrior with sword
+                pixels: [
+                    '....RRRR....',
+                    '...RRRRR...',
+                    '..RFFFRR...',
+                    '..FBBFBF...',
+                    '..FFFFFF...',
+                    '...RRRR....',
+                    '..RRSRR....',
+                    '.RRRRRRR...',
+                    'RRRRRRRRSS.',
+                    '..RR.RR....',
+                    '..RR.RR....',
+                    '..BB.BB....',
+                ],
+                colors: { R: '#cc3333', F: '#ffcc88', B: '#111111', S: '#aaaaaa' }
+            },
+            conservative: {
+                // Paladin — blue armored knight with shield
+                pixels: [
+                    '....BBBB....',
+                    '...BBBBB...',
+                    '..BFFFBB...',
+                    '..FNNFNF...',
+                    '..FFFFFF...',
+                    '...KKKK....',
+                    '..KKKKK....',
+                    '.KKKKKKKK..',
+                    'SKKKKKKKKK.',
+                    '..KK.KK....',
+                    '..KK.KK....',
+                    '..BB.BB....',
+                ],
+                colors: { B: '#4488ff', K: '#3366cc', F: '#ffcc88', N: '#111111', S: '#cccc44' }
+            },
+            rebalancer: {
+                // Alchemist — purple mage with staff
+                pixels: [
+                    '....PPPP....',
+                    '..PPPPPP...',
+                    '..PFFFPP...',
+                    '..FMMFMF...',
+                    '..FFFFFF...',
+                    '...VVVV....',
+                    '..VVVVVG...',
+                    '.VVVVVVVG..',
+                    '..VV.VVGG..',
+                    '..VV.VV....',
+                    '..PP.PP....',
+                    '..PP.PP....',
+                ],
+                colors: { P: '#9955dd', V: '#7744bb', F: '#ffcc88', M: '#111111', G: '#44ff88' }
+            }
+        };
+
+        function drawAvatar(canvasId, type) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const data = AVATARS[type];
+            if (!data) return;
+
+            canvas.width = 12;
+            canvas.height = 12;
+            ctx.clearRect(0, 0, 12, 12);
+
+            data.pixels.forEach((row, y) => {
+                for (let x = 0; x < row.length; x++) {
+                    const c = row[x];
+                    if (c !== '.' && data.colors[c]) {
+                        ctx.fillStyle = data.colors[c];
+                        ctx.fillRect(x, y, 1, 1);
+                    }
+                }
+            });
+        }
+
+        // Draw all avatars
+        drawAvatar('avatar-momentum', 'momentum');
+        drawAvatar('avatar-conservative', 'conservative');
+        drawAvatar('avatar-rebalancer', 'rebalancer');
+
+        // ═══════════════════════════════════════════
+        // STATE
+        // ═══════════════════════════════════════════
+
+        const API_BASE = 'http://localhost:3001';
+        const AGENT_MAP = {
+            'agent-momentum-01': { key: 'momentum', name: 'BLADE', cls: 'berserker', maxSol: 0.01 },
+            'agent-conservative-02': { key: 'conservative', name: 'WARD', cls: 'paladin', maxSol: 0.002 },
+            'agent-rebalancer-03': { key: 'rebalancer', name: 'SAGE', cls: 'alchemist', maxSol: 0.005 },
+            'momentum-trader': { key: 'momentum', name: 'BLADE', cls: 'berserker', maxSol: 0.01 },
+            'conservative-holder': { key: 'conservative', name: 'WARD', cls: 'paladin', maxSol: 0.002 },
+            'rebalancer': { key: 'rebalancer', name: 'SAGE', cls: 'alchemist', maxSol: 0.005 },
+        };
+
+        const state = {
+            balances: { momentum: 0, conservative: 0, rebalancer: 0 },
+            trades: { momentum: 0, conservative: 0, rebalancer: 0 },
+            totalTrades: 0,
+            totalHolds: 0,
+            totalTicks: 0,
+            apiOnline: false,
+            sseConnected: false,
+        };
+
+        // ═══════════════════════════════════════════
+        // UI UPDATES
+        // ═══════════════════════════════════════════
+
+        function updateHP(key, sol) {
+            state.balances[key] = sol;
+            const maxMap = { momentum: 2.5, conservative: 0.5, rebalancer: 5.0 };
+            const max = maxMap[key] || 1.0;
+            const pct = Math.min(100, (sol / max) * 100);
+
+            const bar = document.getElementById(`hp-${key}`);
+            const val = document.getElementById(`hpVal-${key}`);
+            if (bar) bar.style.width = pct + '%';
+            if (val) val.textContent = `${sol.toFixed(4)} SOL`;
+
+            // Update total
+            const total = Object.values(state.balances).reduce((a, b) => a + b, 0);
+            document.getElementById('totalSol').textContent = total.toFixed(3);
+        }
+
+        function updateXP(key) {
+            state.trades[key]++;
+            const xpEl = document.getElementById(`xp-${key}`);
+            const xpVal = document.getElementById(`xpVal-${key}`);
+            const count = state.trades[key];
+            if (xpEl) xpEl.style.width = Math.min(100, count * 10) + '%';
+            if (xpVal) xpVal.textContent = `${count} trades`;
+        }
+
+        function setAction(key, type, text) {
+            const el = document.getElementById(`action-${key}`);
+            if (!el) return;
+            el.className = `last-action ${type}`;
+            const icons = { swap: '⚔️ ATTACK', hold: '🛡️ DEFEND', thinking: '💭 THINKING', error: '💀 MISS' };
+            el.innerHTML = `<div class="action-type">${icons[type] || '❓ ???'}</div>${text}`;
+        }
+
+        function flashCard(key) {
+            const card = document.getElementById(`card-${key}`);
+            if (card) {
+                card.classList.remove('acting');
+                void card.offsetWidth;
+                card.classList.add('acting');
+            }
+        }
+
+        function floatDamage(key, text, color) {
+            const card = document.getElementById(`card-${key}`);
+            if (!card) return;
+            const el = document.createElement('div');
+            el.className = 'damage-float';
+            el.textContent = text;
+            el.style.color = color || 'var(--gold)';
+            el.style.left = (40 + Math.random() * 60) + 'px';
+            el.style.top = '20px';
+            card.style.position = 'relative';
+            card.appendChild(el);
+            setTimeout(() => el.remove(), 1500);
+        }
+
+        function addLog(agentKey, cls, message, actionCls) {
+            const container = document.getElementById('logEntries');
+            const now = new Date();
+            const time = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `
+    <span class="log-time">${time}</span>
+    <span class="log-agent ${cls}">${AGENT_MAP_BY_KEY[agentKey]?.name || agentKey}</span>
+    <span class="log-action ${actionCls || ''}">${message}</span>
+  `;
+            container.appendChild(entry);
+
+            // Keep max 50 entries
+            while (container.children.length > 50) container.removeChild(container.firstChild);
+
+            // Auto-scroll
+            const log = document.getElementById('battleLog');
+            log.scrollTop = log.scrollHeight;
+        }
+
+        const AGENT_MAP_BY_KEY = {
+            momentum: { name: 'BLADE', cls: 'berserker' },
+            conservative: { name: 'WARD', cls: 'paladin' },
+            rebalancer: { name: 'SAGE', cls: 'alchemist' },
+        };
+
+        // ═══════════════════════════════════════════
+        // API POLLING
+        // ═══════════════════════════════════════════
+
+        async function checkHealth() {
+            try {
+                const res = await fetch(`${API_BASE}/vault/health`);
+                const data = await res.json();
+                state.apiOnline = data.status === 'ok';
+                document.getElementById('apiDot').className = `status-dot ${state.apiOnline ? 'online' : 'offline'}`;
+                document.getElementById('apiStatus').textContent = state.apiOnline ? 'vault: online' : 'vault: down';
+            } catch {
+                state.apiOnline = false;
+                document.getElementById('apiDot').className = 'status-dot offline';
+                document.getElementById('apiStatus').textContent = 'vault: offline';
+            }
+        }
+
+        async function fetchBalances() {
+            const agents = [
+                { id: 'agent-momentum-01', key: 'momentum' },
+                { id: 'agent-conservative-02', key: 'conservative' },
+                { id: 'agent-rebalancer-03', key: 'rebalancer' },
+            ];
+
+            for (const agent of agents) {
+                try {
+                    const res = await fetch(`${API_BASE}/vault/balance/${agent.id}`);
+                    const data = await res.json();
+                    if (data.sol !== undefined) {
+                        updateHP(agent.key, data.sol);
+                    }
+                } catch { /* silent */ }
+            }
+        }
+
+        // ═══════════════════════════════════════════
+        // SSE EVENT STREAM
+        // ═══════════════════════════════════════════
+
+        function connectSSE() {
+            const evtSource = new EventSource(`${API_BASE}/vault/events`);
+
+            evtSource.onopen = () => {
+                state.sseConnected = true;
+                document.getElementById('sseDot').className = 'status-dot online';
+                document.getElementById('sseStatus').textContent = 'events: live';
+                addLog('momentum', 'berserker', 'Connected to the Vault event stream!', 'success');
+            };
+
+            evtSource.onmessage = (e) => {
+                try {
+                    const event = JSON.parse(e.data);
+                    handleEvent(event);
+                } catch { /* ignore parse errors */ }
+            };
+
+            evtSource.onerror = () => {
+                state.sseConnected = false;
+                document.getElementById('sseDot').className = 'status-dot offline';
+                document.getElementById('sseStatus').textContent = 'events: reconnecting...';
+            };
+        }
+
+        function handleEvent(event) {
+            const agentInfo = AGENT_MAP[event.agentId];
+            if (!agentInfo) return;
+
+            const { key, name, cls } = agentInfo;
+
+            switch (event.type) {
+                case 'tick':
+                    state.totalTicks++;
+                    document.getElementById('totalTicks').textContent = state.totalTicks;
+                    if (event.data?.balance !== undefined) {
+                        updateHP(key, event.data.balance.sol);
+                    }
+                    setAction(key, 'thinking', `Surveying the battlefield...`);
+                    addLog(key, cls, `surveys the dungeon...`, '');
+                    break;
+
+                case 'reasoning':
+                    // Map reasoning to the dialogue box
+                    const reasoning = event.data?.decision?.reasoning || event.data?.reasoning || '';
+                    if (reasoning) {
+                        setAction(key, 'thinking', `"${reasoning.slice(0, 40)}..."`);
+                        addLog(key, cls, `thinks: "${reasoning}"`, '');
+                    }
+                    break;
+
+                case 'decision':
+                    const decisionAction = event.data?.decision?.action || event.data?.action || 'HOLD';
+                    const decisionConf = event.data?.decision?.confidence || event.data?.confidence;
+                    const confLabel = decisionConf !== undefined ? `${(decisionConf * 100).toFixed(0)}%` : 'N/A';
+
+                    if (decisionAction === 'SWAP' || decisionAction === 'STRIKE') {
+                        setAction(key, 'swap', `Attacking! Confidence: ${confLabel}`);
+                        flashCard(key);
+                        floatDamage(key, `⚔️ ${decisionAction}!`, 'var(--gold)');
+                        addLog(key, cls, `uses <strong>${decisionAction}</strong>! (${confLabel} confidence)`, 'gold');
+                    } else {
+                        state.totalHolds++;
+                        document.getElementById('totalHolds').textContent = state.totalHolds;
+                        setAction(key, 'hold', `Holding position. Confidence: ${confLabel}`);
+                        floatDamage(key, '🛡️ HOLD', 'var(--mp-blue)');
+                        addLog(key, cls, `defends! Holding position. (${confLabel} confidence)`, '');
+                    }
+                    break;
+
+                case 'tx_executed':
+                case 'tx_result':
+                    const success = event.data?.result?.success ?? event.data?.success;
+                    if (success) {
+                        state.totalTrades++;
+                        document.getElementById('totalTrades').textContent = state.totalTrades;
+                        updateXP(key);
+                        floatDamage(key, '+XP!', 'var(--xp-purple)');
+                        const sig = (event.data?.result?.signature || event.data?.signature || '').slice(0, 12);
+                        addLog(key, cls, `quest complete! tx: ${sig}...`, 'success');
+                        setAction(key, 'swap', `✅ Victory! tx: ${sig}...`);
+                    } else {
+                        floatDamage(key, 'MISS!', 'var(--danger)');
+                        addLog(key, cls, `attack missed! ${event.data?.reason || ''}`, 'danger');
+                        setAction(key, 'error', `❌ Failed: ${event.data?.reason || 'unknown'}`);
+                    }
+                    break;
+
+                case 'tx_blocked':
+                    floatDamage(key, '🚫 BLOCKED', 'var(--danger)');
+                    addLog(key, cls, `was blocked by the Rule Guardian! ${event.data?.reason || ''}`, 'danger');
+                    setAction(key, 'error', `🚫 Blocked: ${event.data?.reason || 'rules'}`);
+                    break;
+
+                case 'agent_paused':
+                    setAction(key, 'hold', '⏸️ Resting at the inn...');
+                    addLog(key, cls, 'retreats to the inn to rest.', '');
+                    break;
+
+                case 'agent_resumed':
+                    setAction(key, 'thinking', '🏃 Returning to battle!');
+                    addLog(key, cls, 'returns from the inn, refreshed!', 'success');
+                    break;
+            }
+        }
+
+        // ═══════════════════════════════════════════
+        // BOOT
+        // ═══════════════════════════════════════════
+
+        async function boot() {
+            addLog('momentum', 'berserker', 'BLADE unsheathes their blade...', '');
+            addLog('conservative', 'paladin', 'WARD raises their shield...', '');
+            addLog('rebalancer', 'alchemist', 'SAGE prepares their potions...', '');
+
+            await checkHealth();
+            await fetchBalances();
+            connectSSE();
+
+            // Poll every 15s
+            setInterval(checkHealth, 15000);
+            setInterval(fetchBalances, 15000);
+        }
+
+        boot();
+    </script>
+
+</body>
+
+</html>

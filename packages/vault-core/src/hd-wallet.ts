@@ -17,7 +17,7 @@ export function deriveAgentKeypair(agentId: string): Keypair {
   const index = hashAgentId(agentId);
   const path = `m/44'/501'/${index}'/0'`;
 
-  const seed = bip39.mnemonicToSeedSync(MASTER_SEED);
+  const seed = bip39.mnemonicToSeedSync(MASTER_SEED as string);
   const { key } = derivePath(path, seed.toString('hex'));
 
   return Keypair.fromSeed(key);

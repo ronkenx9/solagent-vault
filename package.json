@@ -11,6 +11,7 @@
     "dev": "pnpm --parallel run dev",
     "test": "pnpm --filter ./packages/* test",
     "vault": "pnpm --filter @solagent/vault-core dev",
+    "vault-api": "pnpm --filter @solagent/vault-api dev",
     "orchestrator": "pnpm --filter @solagent/orchestrator dev",
     "dashboard": "pnpm --filter @solagent/dashboard dev",
     "generate-seed": "pnpm --filter @solagent/shared generate-seed"

@@ -2,7 +2,7 @@
   "name": "@solagent/agent-brain",
   "version": "1.0.0",
   "type": "module",
-  "main": "./dist/index.js",
+  "main": "./src/index.ts",
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
@@ -13,7 +13,7 @@
     "@solagent/vault-core": "workspace:*",
     "@solagent/shared": "workspace:*",
     "openai": "^4.28.0",
-    "anthropic": "^0.18.0",
+    "anthropic": "npm:@anthropic-ai/sdk@^0.36.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {

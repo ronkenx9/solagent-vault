@@ -78,4 +78,5 @@ export interface LLMConfig {
   provider: LLMProvider;
   model: string;
   apiKey: string;
+  baseURL?: string;  // For OpenAI-compatible endpoints (e.g. Groq)
 }

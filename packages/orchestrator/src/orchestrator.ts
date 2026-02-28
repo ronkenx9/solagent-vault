@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { Vault, type VaultConfig } from '@solagent/vault-core';
 import { AgentBrain, DEFAULT_STRATEGIES, type LLMConfig, type AgentConfig, type AgentStrategy } from '@solagent/agent-brain';
-import type { OrchestratorConfig, OrchestratorAgentConfig, OrchestratorState, OrchestratorEvent } from './types.js';
+import type { OrchestratorConfig, OrchestratorAgentConfig, OrchestratorState, OrchestratorAgentState, OrchestratorEvent } from './types.js';
 
 // Default RPC for devnet
 const DEFAULT_RPC_URL = 'https://api.devnet.solana.com';
@@ -22,7 +22,7 @@ export class Orchestrator extends EventEmitter {
     this.llmConfig = config.llmConfig;
 
     this.vault = new Vault({
-      rpcUrl: config.rpcUrl || DEFAULT_RPC_URL,
+      rpcUrl: (config as any).rpcUrl || DEFAULT_RPC_URL,
     });
 
     this.config = {
@@ -36,10 +36,9 @@ export class Orchestrator extends EventEmitter {
       agents: new Map(),
     };
 
-    // Forward vault events
-    this.vault.on('event', (event) => {
-      this.emit('event', event);
-    });
+    // Note: Agent events flow to vault via AgentBrain.emitEvent() directly.
+    // Orchestrator receives them via agentBrain.on('event') in startAgent().
+    // No need to forward vault events here — that would duplicate them.
   }
 
   /**
@@ -86,13 +85,16 @@ export class Orchestrator extends EventEmitter {
         running: false,
       });
 
-      // Try to airdrop (may fail on rate limit)
+      // Skip airdrop for now since we funded manually
+      // console.log(`[Orchestrator] Skipping auto-airdrop for ${agentConfig.id} (already funded)`);
+      /*
       try {
         await this.vault.requestAirdrop(agentConfig.id, 2);
         console.log(`[Orchestrator] Airdropped 2 SOL to ${agentConfig.id}`);
       } catch (error) {
         console.warn(`[Orchestrator] Airdrop failed for ${agentConfig.id}:`, error);
       }
+      */
     }
 
     console.log('[Orchestrator] Initialization complete');
@@ -265,32 +267,39 @@ export class Orchestrator extends EventEmitter {
  */
 export function createDefaultAgentConfigs(): OrchestratorAgentConfig[] {
   return [
+    // ── BLADE and WARD disabled to save LLM costs ──
+    // Re-enable by uncommenting:
+    // {
+    //   id: 'agent-momentum-01',
+    //   strategy: { ...DEFAULT_STRATEGIES.MOMENTUM_TRADER, targetTokens: [...DEFAULT_STRATEGIES.MOMENTUM_TRADER.targetTokens] },
+    //   policies: {
+    //     maxLamportsPerTx: 500_000_000,
+    //     allowedPrograms: ['JUP6LkbZbjS1jKKwapdHNy74zaZWiGdp52teN2pLr'],
+    //     maxTxPerMinute: 3,
+    //   },
+    // },
+    // {
+    //   id: 'agent-conservative-02',
+    //   strategy: { ...DEFAULT_STRATEGIES.CONSERVATIVE_HOLDER, targetTokens: [...DEFAULT_STRATEGIES.CONSERVATIVE_HOLDER.targetTokens] },
+    //   policies: {
+    //     maxLamportsPerTx: 100_000_000,
+    //     allowedPrograms: ['JUP6LkbZbjS1jKKwapdHNy74zaZWiGdp52teN2pLr'],
+    //     maxTxPerMinute: 1,
+    //   },
+    // },
     {
-      id: 'agent-momentum-01',
-      strategy: DEFAULT_STRATEGIES.MOMENTUM_TRADER,
-      policies: {
-        maxLamportsPerTx: 500_000_000,    // 0.5 SOL
-        allowedPrograms: ['JUP6LkbZbjS1jKKwapdHNy74zaZWiGdp52teN2pLr'],
-        maxTxPerMinute: 2,
-      },
-    },
-    {
-      id: 'agent-conservative-02',
-      strategy: DEFAULT_STRATEGIES.CONSERVATIVE_HOLDER,
-      policies: {
-        maxLamportsPerTx: 100_000_000,    // 0.1 SOL
-        allowedPrograms: ['JUP6LkbZbjS1jKKwapdHNy74zaZWiGdp52teN2pLr'],
-        maxTxPerMinute: 1,
-      },
-    },
-    {
+      // ── SAGE: Active agent (5 SOL wallet) ──
       id: 'agent-rebalancer-03',
-      strategy: DEFAULT_STRATEGIES.REBALANCER,
+      strategy: { ...DEFAULT_STRATEGIES.REBALANCER, targetTokens: [...DEFAULT_STRATEGIES.REBALANCER.targetTokens] },
       policies: {
-        maxLamportsPerTx: 300_000_000,    // 0.3 SOL
-        allowedPrograms: ['JUP6LkbZbjS1jKKwapdHNy74zaZWiGdp52teN2pLr', 'RVKd61ztZW9GUwhRbbLoYVRE5Xf1ktQaacEEzebSB'],
-        maxTxPerMinute: 3,
+        maxLamportsPerTx: 500_000_000,    // 0.5 SOL — 10% of 5 SOL wallet
+        allowedPrograms: [
+          'JUP6LkbZbjS1jKKwapdHNy74zaZWiGdp52teN2pLr', // Jupiter Aggregator v6
+          'DFLOWxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+        ],
+        maxTxPerMinute: 2,
       },
     },
   ];
 }
+
