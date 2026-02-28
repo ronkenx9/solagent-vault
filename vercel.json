@@ -1,37 +1,30 @@
 {
     "version": 2,
+    "public": true,
     "name": "solagent-vault",
     "builds": [
         {
+            "src": "packages/dashboard/public/**",
+            "use": "@vercel/static"
+        },
+        {
             "src": "packages/vault-api/src/server.ts",
-            "use": "@vercel/node",
-            "config": {
-                "includeFiles": [
-                    "packages/dashboard/public/**"
-                ]
-            }
+            "use": "@vercel/node"
         }
     ],
     "routes": [
-        {
-            "src": "/vault/events",
-            "dest": "packages/vault-api/src/server.ts",
-            "headers": {
-                "Cache-Control": "no-cache"
-            }
-        },
         {
             "src": "/vault/(.*)",
             "dest": "packages/vault-api/src/server.ts"
         },
         {
             "src": "/(.*)",
-            "dest": "/packages/dashboard/public/$1",
+            "dest": "packages/dashboard/public/$1",
             "check": true
         },
         {
             "src": "/(.*)",
-            "dest": "/packages/dashboard/public/index.html"
+            "dest": "packages/dashboard/public/index.html"
         }
     ]
 }
