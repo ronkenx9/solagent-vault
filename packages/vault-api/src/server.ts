@@ -14,8 +14,12 @@ const app: Application = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve the pixel RPG dashboard at /
-app.use(express.static(resolve(process.cwd(), '../dashboard/public')));
+// Note: Static files for the dashboard are handled by vercel.json routes in production.
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+    app.use(express.static(resolve(process.cwd(), '../dashboard/public')));
+}
+
+console.log('[VaultAPI] Module loading check...');
 
 // --- Vault instance ---
 let vault: any;
