@@ -18,150 +18,62 @@
             --bg-panel: #1a1f3d;
             --bg-panel-hover: #222850;
             --border-pixel: #2a3060;
-            --border-gold: #c8a030;
-            --gold: #ffd700;
-            --gold-dark: #b8860b;
-            --hp-green: #22dd44;
-            --hp-green-dim: #115522;
-            --mp-blue: #4488ff;
-            --mp-blue-dim: #223366;
-            --xp-purple: #bb77ff;
-            --danger: #ff4455;
-            --text-parchment: #e8d5a3;
-            --text-dim: #7a7090;
-            --text-bright: #fff8e0;
-            --berserker: #ff5544;
-            --paladin: #44aaff;
-            --alchemist: #aa66ff;
+            --border-gold: #ffd700;
+            --text-parchment: #e2e4f3;
+            --hp-green: #4ade80;
+            --mp-blue: #60a5fa;
+            --xp-gold: #fbbf24;
+            --danger-red: #f87171;
         }
 
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            background: var(--bg-deep);
-            color: var(--text-parchment);
-            font-family: 'Silkscreen', cursive;
-            min-height: 100vh;
-            overflow-x: hidden;
             image-rendering: pixelated;
         }
 
-        /* ═══ PIXEL BORDER UTILITY ═══ */
-        .pixel-border {
-            border: 4px solid var(--border-pixel);
-            box-shadow:
-                inset 2px 2px 0 rgba(255, 255, 255, 0.05),
-                inset -2px -2px 0 rgba(0, 0, 0, 0.3),
-                4px 4px 0 rgba(0, 0, 0, 0.5);
-        }
-
-        .pixel-border-gold {
-            border: 4px solid var(--border-gold);
-            box-shadow:
-                inset 2px 2px 0 rgba(255, 215, 0, 0.15),
-                inset -2px -2px 0 rgba(0, 0, 0, 0.3),
-                0 0 20px rgba(255, 215, 0, 0.08),
-                4px 4px 0 rgba(0, 0, 0, 0.5);
-        }
-
-        /* ═══ SCANLINE OVERLAY ═══ */
-        body::after {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: repeating-linear-gradient(transparent 0px,
-                    transparent 2px,
-                    rgba(0, 0, 0, 0.08) 2px,
-                    rgba(0, 0, 0, 0.08) 4px);
-            pointer-events: none;
-            z-index: 9999;
-        }
-
-        /* ═══ HEADER / TITLE BANNER ═══ */
-        .title-banner {
-            text-align: center;
-            padding: 28px 20px 20px;
-            position: relative;
-        }
-
-        .title-banner h1 {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 22px;
-            color: var(--gold);
-            text-shadow:
-                2px 2px 0 var(--gold-dark),
-                4px 4px 0 rgba(0, 0, 0, 0.6);
-            letter-spacing: 3px;
-            animation: titlePulse 3s ease-in-out infinite;
-        }
-
-        @keyframes titlePulse {
-
-            0%,
-            100% {
-                text-shadow: 2px 2px 0 var(--gold-dark), 4px 4px 0 rgba(0, 0, 0, 0.6), 0 0 10px rgba(255, 215, 0, 0.15);
-            }
-
-            50% {
-                text-shadow: 2px 2px 0 var(--gold-dark), 4px 4px 0 rgba(0, 0, 0, 0.6), 0 0 30px rgba(255, 215, 0, 0.3);
-            }
-        }
-
-        .title-sub {
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-parchment);
             font-family: 'Silkscreen', cursive;
-            font-size: 10px;
-            color: var(--text-dim);
-            margin-top: 8px;
-            letter-spacing: 4px;
-            text-transform: uppercase;
-        }
-
-        .coins-display {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--bg-panel);
-            padding: 6px 16px;
-            margin-top: 12px;
-            font-family: 'Press Start 2P', cursive;
-            font-size: 11px;
-            color: var(--gold);
-        }
-
-        .coin-icon {
-            display: inline-block;
-            width: 14px;
-            height: 14px;
-            background: var(--gold);
-            border-radius: 50%;
-            box-shadow: inset -2px -2px 0 var(--gold-dark);
-            animation: coinSpin 1.5s ease-in-out infinite;
-        }
-
-        @keyframes coinSpin {
-
-            0%,
-            100% {
-                transform: scaleX(1);
-            }
-
-            50% {
-                transform: scaleX(0.3);
-            }
-        }
-
-        /* ═══ STATUS BAR ═══ */
-        .status-bar {
+            min-height: 100vh;
             display: flex;
-            justify-content: center;
-            gap: 24px;
-            padding: 8px 20px;
-            font-size: 9px;
-            color: var(--text-dim);
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+            background-image:
+                radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.05) 1px, transparent 0);
+            background-size: 24px 24px;
+        }
+
+        /* ═══ TOP NAVBAR ═══ */
+        .navbar {
+            width: 100%;
+            max-width: 1100px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 4px double var(--border-pixel);
+        }
+
+        .nav-logo {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            color: var(--border-gold);
+            text-shadow: 2px 2px #000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-status {
+            display: flex;
+            gap: 20px;
+            font-size: 10px;
         }
 
         .status-item {
@@ -173,205 +85,185 @@
         .status-dot {
             width: 8px;
             height: 8px;
-            border-radius: 50%;
-            animation: blink 2s ease-in-out infinite;
+            background: #444;
+            box-shadow: 0 0 5px #000;
         }
 
         .status-dot.online {
-            background: var(--hp-green);
+            background: #00ff00;
+            box-shadow: 0 0 8px #00ff00;
         }
 
-        .status-dot.offline {
-            background: var(--danger);
-            animation: none;
+        /* ═══ PIXEL BORDERS ═══ */
+        .pixel-border {
+            border: 4px solid var(--border-pixel);
+            position: relative;
+            background: var(--bg-panel);
+            box-shadow: inset -4px -4px 0px rgba(0, 0, 0, 0.2);
         }
 
-        @keyframes blink {
+        .pixel-border-gold {
+            border: 4px solid var(--border-gold);
+            position: relative;
+            background: var(--bg-panel);
+            box-shadow: inset -4px -4px 0px rgba(0, 0, 0, 0.2), 0 0 15px rgba(255, 215, 0, 0.1);
+        }
 
-            0%,
-            100% {
-                opacity: 1;
-            }
+        /* ═══ HERO SECTION ═══ */
+        .hero {
+            text-align: center;
+            margin-bottom: 40px;
+        }
 
-            50% {
-                opacity: 0.3;
-            }
+        .hero h1 {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 28px;
+            margin-bottom: 10px;
+            letter-spacing: -2px;
+            background: linear-gradient(to bottom, #fff 0%, #ffd700 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 14px;
+            color: #8892b0;
         }
 
         /* ═══ PARTY GRID ═══ */
         .party-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            padding: 0 20px;
-            max-width: 1200px;
-            margin: 0 auto;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            width: 100%;
+            max-width: 1100px;
+            margin-bottom: 40px;
         }
 
-        @media (max-width: 800px) {
-            .party-grid {
-                grid-template-columns: 1fr;
-                max-width: 420px;
-            }
-        }
-
-        /* ═══ CHARACTER CARD ═══ */
         .char-card {
-            background: var(--bg-panel);
-            padding: 16px;
-            position: relative;
-            transition: all 0.2s;
+            padding: 20px;
+            transition: transform 0.2s, background 0.2s;
         }
 
         .char-card:hover {
+            transform: translateY(-5px);
             background: var(--bg-panel-hover);
-            transform: translateY(-2px);
-        }
-
-        .char-card.acting {
-            animation: cardFlash 0.6s ease-out;
-        }
-
-        @keyframes cardFlash {
-            0% {
-                box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(255, 215, 0, 0.3);
-            }
-
-            100% {
-                box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
-            }
         }
 
         .char-header {
             display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 12px;
+            gap: 15px;
+            margin-bottom: 15px;
         }
 
-        /* ═══ PIXEL AVATAR ═══ */
         .char-avatar {
-            width: 48px;
-            height: 48px;
+            width: 64px;
+            height: 64px;
+            background: #000;
+            border: 4px solid var(--border-pixel);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             position: relative;
-            flex-shrink: 0;
         }
 
         .char-avatar canvas {
             width: 48px;
             height: 48px;
-            image-rendering: pixelated;
         }
 
         .char-class-badge {
             position: absolute;
-            bottom: -4px;
-            right: -4px;
-            font-size: 14px;
-            filter: drop-shadow(1px 1px 0 rgba(0, 0, 0, 0.8));
+            bottom: -8px;
+            right: -8px;
+            background: var(--bg-deep);
+            border: 2px solid var(--border-pixel);
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
         }
 
         .char-info {
             flex: 1;
-            min-width: 0;
         }
 
         .char-name {
             font-family: 'Press Start 2P', cursive;
-            font-size: 10px;
+            font-size: 14px;
             margin-bottom: 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .char-name.berserker {
-            color: var(--berserker);
-        }
-
-        .char-name.paladin {
-            color: var(--paladin);
-        }
-
-        .char-name.alchemist {
-            color: var(--alchemist);
         }
 
         .char-class {
-            font-size: 8px;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            font-size: 10px;
+            color: #888;
+            margin-bottom: 4px;
         }
 
         .char-level {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 8px;
-            color: var(--gold);
-            margin-top: 2px;
+            font-size: 10px;
+            color: var(--border-gold);
+        }
+
+        .berserker {
+            color: var(--danger-red);
+        }
+
+        .paladin {
+            color: var(--mp-blue);
+        }
+
+        .alchemist {
+            color: var(--xp-gold);
         }
 
         /* ═══ STAT BARS ═══ */
         .stat-bars {
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            margin: 12px 0;
+            gap: 10px;
+            margin-bottom: 15px;
         }
 
         .stat-row {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
 
         .stat-label {
             font-family: 'Press Start 2P', cursive;
-            font-size: 7px;
-            width: 24px;
-            flex-shrink: 0;
-        }
-
-        .stat-label.hp {
-            color: var(--hp-green);
-        }
-
-        .stat-label.mp {
-            color: var(--mp-blue);
-        }
-
-        .stat-label.xp {
-            color: var(--xp-purple);
+            font-size: 8px;
+            width: 25px;
         }
 
         .stat-bar-track {
             flex: 1;
-            height: 10px;
-            background: rgba(0, 0, 0, 0.4);
+            height: 12px;
+            background: #000;
             border: 2px solid var(--border-pixel);
             position: relative;
-            overflow: hidden;
         }
 
         .stat-bar-fill {
             height: 100%;
-            transition: width 1s ease-out;
+            width: 0%;
+            transition: width 0.5s ease-out;
             position: relative;
         }
 
         .stat-bar-fill.hp {
             background: var(--hp-green);
-            box-shadow: inset 0 -2px 0 var(--hp-green-dim);
         }
 
         .stat-bar-fill.mp {
             background: var(--mp-blue);
-            box-shadow: inset 0 -2px 0 var(--mp-blue-dim);
         }
 
         .stat-bar-fill.xp {
-            background: var(--xp-purple);
-            box-shadow: inset 0 -2px 0 #5533aa;
+            background: var(--xp-gold);
         }
 
         .stat-bar-fill::after {
@@ -418,285 +310,104 @@
             margin-right: 4px;
         }
 
-        /* Level Up Button */
-        .level-up-btn {
+        /* Policy Controls (Level Up/Down) */
+        .policy-controls {
+            display: flex;
+            gap: 8px;
             margin-top: 10px;
-            padding: 4px 8px;
-            background: #444;
-            color: #ffd700;
-            border: 2px solid #666;
+        }
+
+        .level-btn {
+            padding: 6px 4px;
+            background: #2a2f4d;
+            color: var(--text-parchment);
+            border: 2px solid var(--border-pixel);
             cursor: pointer;
             font-family: 'Press Start 2P', cursive;
-            font-size: 8px;
-            width: 100%;
+            font-size: 7px;
+            flex: 1;
             transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
+            gap: 4px;
         }
 
-        .level-up-btn:hover {
-            background: #ffd700;
-            color: #000;
+        .level-btn:hover {
+            background: var(--bg-panel-hover);
             border-color: #fff;
-            transform: scale(1.02);
+            color: #fff;
         }
 
-        .level-up-btn:active {
-            transform: scale(0.98);
+        .level-btn.up:hover {
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+            color: #ffd700;
         }
 
-        .level-up-btn.loading {
+        .level-btn.down:hover {
+            box-shadow: 0 0 10px rgba(255, 100, 100, 0.3);
+            color: #ff6464;
+        }
+
+        .level-btn:active {
+            transform: scale(0.95);
+        }
+
+        .level-btn.loading {
             opacity: 0.5;
-            pointer-events: none;
+            cursor: wait;
         }
 
         .limit-display {
-            font-size: 9px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
             color: #00ff00;
-            margin-top: 4px;
             text-align: center;
+            margin-top: 10px;
+            padding: 5px;
+            background: rgba(0, 255, 0, 0.05);
+            border: 1px dashed #008800;
         }
 
-        /* ═══ LAST ACTION ═══ */
+        /* ═══ ACTION DISPLAY ═══ */
         .last-action {
-            margin-top: 8px;
-            padding: 8px;
-            background: rgba(0, 0, 0, 0.3);
-            border-left: 3px solid var(--border-pixel);
-            font-size: 9px;
-            color: var(--text-dim);
-            min-height: 36px;
-        }
-
-        .last-action.swap {
-            border-left-color: var(--gold);
-        }
-
-        .last-action.hold {
-            border-left-color: var(--mp-blue);
-        }
-
-        .last-action.thinking {
-            border-left-color: var(--xp-purple);
+            margin-top: 15px;
+            background: #000;
+            border: 2px solid var(--border-pixel);
+            padding: 10px;
+            font-size: 10px;
+            height: 60px;
+            overflow: hidden;
+            color: #888;
         }
 
         .action-type {
             font-family: 'Press Start 2P', cursive;
-            font-size: 7px;
-            margin-bottom: 4px;
-        }
-
-        /* ═══ DAMAGE NUMBERS ═══ */
-        .damage-float {
-            position: absolute;
-            font-family: 'Press Start 2P', cursive;
-            font-size: 12px;
-            color: var(--gold);
-            pointer-events: none;
-            animation: damageFloat 1.5s ease-out forwards;
-            z-index: 100;
-            text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.8);
-        }
-
-        @keyframes damageFloat {
-            0% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-
-            30% {
-                transform: translateY(-20px) scale(1.3);
-            }
-
-            100% {
-                opacity: 0;
-                transform: translateY(-50px) scale(0.8);
-            }
-        }
-
-        /* ═══ BATTLE LOG (RPG DIALOGUE BOX) ═══ */
-        .battle-log-container {
-            max-width: 1200px;
-            margin: 20px auto 30px;
-            padding: 0 20px;
-        }
-
-        .battle-log {
-            background: var(--bg-dungeon);
-            padding: 16px;
-            min-height: 200px;
-            max-height: 300px;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        .battle-log-title {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 9px;
-            color: var(--gold);
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .battle-log-title::after {
-            content: '';
-            flex: 1;
-            height: 2px;
-            background: linear-gradient(to right, var(--border-gold), transparent);
-        }
-
-        .log-entry {
-            padding: 4px 0;
-            font-size: 9px;
-            line-height: 1.6;
-            color: var(--text-dim);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
-            animation: logAppear 0.3s ease-out;
-        }
-
-        @keyframes logAppear {
-            from {
-                opacity: 0;
-                transform: translateY(6px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .log-time {
-            color: var(--text-dim);
-            opacity: 0.5;
-            font-size: 7px;
-            margin-right: 6px;
-        }
-
-        .log-agent {
-            font-family: 'Press Start 2P', cursive;
-            font-size: 7px;
-            margin-right: 4px;
-        }
-
-        .log-agent.berserker {
-            color: var(--berserker);
-        }
-
-        .log-agent.paladin {
-            color: var(--paladin);
-        }
-
-        .log-agent.alchemist {
-            color: var(--alchemist);
-        }
-
-        .log-action {
-            color: var(--text-parchment);
-        }
-
-        .log-action.gold {
-            color: var(--gold);
-        }
-
-        .log-action.danger {
-            color: var(--danger);
-        }
-
-        .log-action.success {
-            color: var(--hp-green);
-        }
-
-        /* ═══ THINKING BUBBLE ═══ */
-        .thinking-indicator {
-            display: inline-flex;
-            gap: 3px;
-            margin-left: 4px;
-        }
-
-        .think-dot {
-            width: 4px;
-            height: 4px;
-            background: var(--xp-purple);
-            animation: thinkBounce 1.2s ease-in-out infinite;
-        }
-
-        .think-dot:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .think-dot:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        @keyframes thinkBounce {
-
-            0%,
-            80%,
-            100% {
-                transform: translateY(0);
-                opacity: 0.3;
-            }
-
-            40% {
-                transform: translateY(-4px);
-                opacity: 1;
-            }
-        }
-
-        /* ═══ GROUND DECORATION ═══ */
-        .ground-deco {
-            text-align: center;
-            padding: 10px;
             font-size: 8px;
-            color: var(--text-dim);
-            opacity: 0.3;
-            letter-spacing: 6px;
+            color: var(--text-parchment);
+            margin-bottom: 6px;
         }
 
-        /* ═══ SCROLLBAR ═══ */
-        ::-webkit-scrollbar {
-            width: 8px;
+        .tag-buy {
+            color: #4ade80;
         }
 
-        ::-webkit-scrollbar-track {
-            background: var(--bg-deep);
+        .tag-sell {
+            color: #f87171;
         }
 
-        ::-webkit-scrollbar-thumb {
-            background: var(--border-pixel);
-            border: 2px solid var(--bg-deep);
+        .tag-swap {
+            color: #60a5fa;
         }
 
-        /* ═══ IDLE ANIMATION ON AVATARS ═══ */
-        .idle-bounce {
-            animation: idleBounce 2s ease-in-out infinite;
-        }
-
-        @keyframes idleBounce {
-
-            0%,
-            100% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-3px);
-            }
-        }
-
-        /* ═══ PARTY STATS FOOTER ═══ */
+        /* ═══ PARTY STATS ═══ */
         .party-stats {
             display: flex;
             justify-content: center;
-            gap: 32px;
-            padding: 12px 20px;
-            max-width: 1200px;
-            margin: 0 auto;
+            gap: 40px;
+            width: 100%;
+            max-width: 1100px;
+            margin-bottom: 20px;
         }
 
         .party-stat {
@@ -705,48 +416,149 @@
 
         .party-stat-value {
             font-family: 'Press Start 2P', cursive;
-            font-size: 14px;
-            color: var(--gold);
+            font-size: 18px;
+            color: var(--border-gold);
+            margin-bottom: 4px;
         }
 
         .party-stat-label {
-            font-size: 8px;
-            color: var(--text-dim);
-            margin-top: 4px;
+            font-size: 10px;
+            color: #888;
             text-transform: uppercase;
-            letter-spacing: 1px;
+        }
+
+        /* ═══ BATTLE LOG ═══ */
+        .battle-log-container {
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .battle-log {
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: 'Silkscreen', cursive;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .battle-log-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            color: var(--border-gold);
+            margin-bottom: 10px;
+            border-bottom: 2px solid var(--border-pixel);
+            padding-bottom: 5px;
+            position: sticky;
+            top: 0;
+            background: var(--bg-panel);
+            z-index: 10;
+        }
+
+        .log-entry {
+            display: flex;
+            gap: 12px;
+            line-height: 1.4;
+        }
+
+        .log-time {
+            color: #555;
+            min-width: 65px;
+        }
+
+        .log-agent {
+            font-weight: bold;
+            min-width: 70px;
+        }
+
+        .log-action {
+            flex: 1;
+        }
+
+        .success {
+            color: var(--hp-green);
+        }
+
+        .warning {
+            color: var(--xp-gold);
+        }
+
+        .danger {
+            color: var(--danger-red);
+        }
+
+        /* ═══ DECO ═══ */
+        .ground-deco {
+            margin-top: 40px;
+            color: #2a3060;
+            font-size: 12px;
+            opacity: 0.5;
+        }
+
+        /* ═══ ANIMATIONS ═══ */
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-4px);
+            }
+        }
+
+        .idle-bounce {
+            animation: bounce 2s infinite ease-in-out;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #000;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-pixel);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--bg-panel-hover);
         }
     </style>
 </head>
 
 <body>
 
-    <!-- ═══ TITLE ═══ -->
-    <div class="title-banner">
-        <h1>⚔️ THE VAULT ⚔️</h1>
-        <div class="title-sub">autonomous agents · solana devnet</div>
-        <div class="coins-display pixel-border">
-            <span class="coin-icon"></span>
-            <span id="totalSol">0.000</span> SOL
+    <div class="navbar">
+        <div class="nav-logo">
+            <span>🏰</span> SOLAGENT VAULT
+        </div>
+        <div class="nav-status">
+            <div class="status-item">
+                <div class="status-dot" id="apiDot"></div>
+                CORE API
+            </div>
+            <div class="status-item">
+                <div class="status-dot" id="sseDot"></div>
+                LIVE FEED
+            </div>
+            <div class="status-item">
+                NETWORK: <span style="color: var(--hp-green); margin-left: 4px;">DEVNET</span>
+            </div>
         </div>
     </div>
 
-    <!-- ═══ STATUS ═══ -->
-    <div class="status-bar">
-        <div class="status-item">
-            <div class="status-dot" id="apiDot"></div>
-            <span id="apiStatus">connecting...</span>
-        </div>
-        <div class="status-item">
-            <div class="status-dot" id="sseDot"></div>
-            <span id="sseStatus">events: waiting</span>
-        </div>
-        <div class="status-item">
-            <span>⏱️ tick: 30s</span>
-        </div>
+    <div class="hero">
+        <h1>THE COMMAND CENTER</h1>
+        <p>Monitoring autonomous agent activities within the dark protocol dungeons.</p>
     </div>
 
-    <!-- ═══ PARTY ═══ -->
     <div class="party-grid" id="partyGrid">
 
         <!-- BLADE the Berserker -->
@@ -790,9 +602,14 @@
                 <div class="equip-slot"><span class="equip-icon">🎯</span> High risk</div>
             </div>
             <div class="limit-display" id="limit-momentum">Limit: 0.50 SOL</div>
-            <button class="level-up-btn pixel-border" onclick="levelUp('agent-momentum-01')">
-                <span>🌟</span> LEVEL UP
-            </button>
+            <div class="policy-controls">
+                <button class="level-btn up" onclick="levelUp('agent-momentum-01')">
+                    <span>🌟</span> UP
+                </button>
+                <button class="level-btn down" onclick="levelDown('agent-momentum-01')">
+                    <span>💀</span> DOWN
+                </button>
+            </div>
             <div class="last-action" id="action-momentum">
                 <div class="action-type">💤 IDLE</div>
                 Waiting for quest to begin...
@@ -840,9 +657,14 @@
                 <div class="equip-slot"><span class="equip-icon">🧘</span> Low risk</div>
             </div>
             <div class="limit-display" id="limit-conservative">Limit: 0.50 SOL</div>
-            <button class="level-up-btn pixel-border" onclick="levelUp('agent-conservative-02')">
-                <span>🌟</span> LEVEL UP
-            </button>
+            <div class="policy-controls">
+                <button class="level-btn up" onclick="levelUp('agent-conservative-02')">
+                    <span>🌟</span> UP
+                </button>
+                <button class="level-btn down" onclick="levelDown('agent-conservative-02')">
+                    <span>💀</span> DOWN
+                </button>
+            </div>
             <div class="last-action" id="action-conservative">
                 <div class="action-type">💤 IDLE</div>
                 Meditating before the quest...
@@ -890,9 +712,14 @@
                 <div class="equip-slot"><span class="equip-icon">⚖️</span> Med risk</div>
             </div>
             <div class="limit-display" id="limit-rebalancer">Limit: 0.50 SOL</div>
-            <button class="level-up-btn pixel-border" onclick="levelUp('agent-rebalancer-03')">
-                <span>🌟</span> LEVEL UP
-            </button>
+            <div class="policy-controls">
+                <button class="level-btn up" onclick="levelUp('agent-rebalancer-03')">
+                    <span>🌟</span> UP
+                </button>
+                <button class="level-btn down" onclick="levelDown('agent-rebalancer-03')">
+                    <span>💀</span> DOWN
+                </button>
+            </div>
             <div class="last-action" id="action-rebalancer">
                 <div class="action-type">💤 IDLE</div>
                 Preparing transmutation circle...
@@ -948,48 +775,48 @@
                     '...RRRR....',
                     '..RRSRR....',
                     '.RRRRRRR...',
-                    'RRRRRRRRSS.',
-                    '..RR.RR....',
-                    '..RR.RR....',
-                    '..BB.BB....',
+                    '....R.R....',
+                    '....R.R....',
+                    '....F.F....',
+                    '....F.F....',
                 ],
-                colors: { R: '#cc3333', F: '#ffcc88', B: '#111111', S: '#aaaaaa' }
+                colors: { 'R': '#f87171', 'F': '#e2e4f3', 'B': '#2a3060', 'S': '#ffd700' }
             },
             conservative: {
-                // Paladin — blue armored knight with shield
+                // Paladin — blue warrior with shield
                 pixels: [
                     '....BBBB....',
                     '...BBBBB...',
-                    '..BFFFBB...',
-                    '..FNNFNF...',
+                    '..BFFBBB...',
+                    '..FBBFBF...',
                     '..FFFFFF...',
-                    '...KKKK....',
-                    '..KKKKK....',
-                    '.KKKKKKKK..',
-                    'SKKKKKKKKK.',
-                    '..KK.KK....',
-                    '..KK.KK....',
-                    '..BB.BB....',
+                    '...BBBB....',
+                    '..BBBBB....',
+                    '.BBBBBBB...',
+                    '....B.B....',
+                    '....B.B....',
+                    '....F.F....',
+                    '....F.F....',
                 ],
-                colors: { B: '#4488ff', K: '#3366cc', F: '#ffcc88', N: '#111111', S: '#cccc44' }
+                colors: { 'B': '#60a5fa', 'F': '#e2e4f3' }
             },
             rebalancer: {
-                // Alchemist — purple mage with staff
+                // Alchemist — gold mage with robes
                 pixels: [
-                    '....PPPP....',
-                    '..PPPPPP...',
-                    '..PFFFPP...',
-                    '..FMMFMF...',
+                    '....YYYY....',
+                    '...YYYYY...',
+                    '..YFFYYY...',
+                    '..FYYFYF...',
                     '..FFFFFF...',
-                    '...VVVV....',
-                    '..VVVVVG...',
-                    '.VVVVVVVG..',
-                    '..VV.VVGG..',
-                    '..VV.VV....',
-                    '..PP.PP....',
-                    '..PP.PP....',
+                    '...YYYY....',
+                    '..YYYYY....',
+                    '.YYYYYYY...',
+                    '....Y.Y....',
+                    '....Y.Y....',
+                    '....F.F....',
+                    '....F.F....',
                 ],
-                colors: { P: '#9955dd', V: '#7744bb', F: '#ffcc88', M: '#111111', G: '#44ff88' }
+                colors: { 'Y': '#fbbf24', 'F': '#e2e4f3' }
             }
         };
 
@@ -1078,7 +905,7 @@
         }
 
         // ═══════════════════════════════════════════
-        // LEVEL UP LOGIC (POLICY CONTROL)
+        // POLICY CONTROL LOGIC (LEVEL UP/DOWN)
         // ═══════════════════════════════════════════
 
         async function levelUp(agentId) {
@@ -1086,9 +913,9 @@
             if (!data) return;
 
             const currentLimit = state.limits[data.key] || 0.5;
-            const nextLimit = currentLimit * 1.5; // Multiply by 1.5 for each level up
+            const nextLimit = currentLimit * 1.5;
 
-            const btn = document.querySelector(`#card-${data.key} .level-up-btn`);
+            const btn = document.querySelector(`#card-${data.key} .level-btn.up`);
             if (btn) btn.classList.add('loading');
 
             addLog(data.key, data.cls, `Attempting to LEVEL UP ${data.name}... Increasing cap to ${nextLimit.toFixed(2)} SOL.`, '');
@@ -1099,27 +926,59 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         agent_id: agentId,
-                        max_lamports_per_tx: Math.floor(nextLimit * 1_000_000_000)
+                        max_lamports_per_tx: Math.floor(nextLimit * 1e9),
                     })
                 });
 
                 if (response.ok) {
                     state.limits[data.key] = nextLimit;
-                    document.getElementById(`limit-${data.key}`).innerText = `Limit: ${nextLimit.toFixed(2)} SOL`;
-                    addLog(data.key, data.cls, `SUCCESS! ${data.name} has LEVELED UP! New cap: ${nextLimit.toFixed(2)} SOL. 🌟`, 'success');
-
-                    // Add a flash effect to the limit display
                     const limitEl = document.getElementById(`limit-${data.key}`);
-                    if (limitEl) {
-                        limitEl.style.color = '#fff';
-                        setTimeout(() => limitEl.style.color = '#00ff00', 500);
-                    }
+                    if (limitEl) limitEl.innerText = `Limit: ${nextLimit.toFixed(2)} SOL`;
+                    addLog(data.key, data.cls, `LEVEL UP SUCCESS! ${data.name} is now more powerful. New cap: ${nextLimit.toFixed(2)} SOL.`, 'success');
                 } else {
-                    throw new Error('Policy update failed');
+                    addLog(data.key, data.cls, `LEVEL UP FAILED! Server returned ${response.status}.`, 'danger');
                 }
             } catch (err) {
                 console.error(err);
-                addLog(data.key, data.cls, `FAILED to level up ${data.name}.`, 'danger');
+                addLog(data.key, data.cls, `LEVEL UP CRASH! Check API connection.`, 'danger');
+            } finally {
+                if (btn) btn.classList.remove('loading');
+            }
+        }
+
+        async function levelDown(agentId) {
+            const data = AGENT_MAP[agentId];
+            if (!data) return;
+
+            const currentLimit = state.limits[data.key] || 0.5;
+            const nextLimit = Math.max(0.01, currentLimit / 1.5);
+
+            const btn = document.querySelector(`#card-${data.key} .level-btn.down`);
+            if (btn) btn.classList.add('loading');
+
+            addLog(data.key, data.cls, `Attempting to LEVEL DOWN ${data.name}... Reducing risk to ${nextLimit.toFixed(2)} SOL.`, '');
+
+            try {
+                const response = await fetch(`${API_BASE}/vault/policy`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        agent_id: agentId,
+                        max_lamports_per_tx: Math.floor(nextLimit * 1e9),
+                    })
+                });
+
+                if (response.ok) {
+                    state.limits[data.key] = nextLimit;
+                    const limitEl = document.getElementById(`limit-${data.key}`);
+                    if (limitEl) limitEl.innerText = `Limit: ${nextLimit.toFixed(2)} SOL`;
+                    addLog(data.key, data.cls, `LEVEL DOWN SUCCESS! ${data.name} has been restrained. New cap: ${nextLimit.toFixed(2)} SOL.`, 'warning');
+                } else {
+                    addLog(data.key, data.cls, `LEVEL DOWN FAILED! Server returned ${response.status}.`, 'danger');
+                }
+            } catch (err) {
+                console.error(err);
+                addLog(data.key, data.cls, `LEVEL DOWN CRASH! Check API connection.`, 'danger');
             } finally {
                 if (btn) btn.classList.remove('loading');
             }
@@ -1129,229 +988,156 @@
         // UI UPDATES
         // ═══════════════════════════════════════════
 
-        function updateHP(key, sol) {
-            state.balances[key] = sol;
-            const maxMap = { momentum: 2.5, conservative: 0.5, rebalancer: 5.0 };
-            const max = maxMap[key] || 1.0;
-            const pct = Math.min(100, (sol / max) * 100);
+        function updateUI() {
+            // Update counts
+            document.getElementById('totalTrades').innerText = state.totalTrades;
+            document.getElementById('totalHolds').innerText = state.totalHolds;
+            document.getElementById('totalTicks').innerText = state.totalTicks;
 
-            const bar = document.getElementById(`hp-${key}`);
-            const val = document.getElementById(`hpVal-${key}`);
-            if (bar) bar.style.width = pct + '%';
-            if (val) val.textContent = `${sol.toFixed(4)} SOL`;
+            // Connection dots
+            document.getElementById('apiDot').className = `status-dot ${state.apiOnline ? 'online' : ''}`;
+            document.getElementById('sseDot').className = `status-dot ${state.sseConnected ? 'online' : ''}`;
 
-            // Update total
-            const total = Object.values(state.balances).reduce((a, b) => a + b, 0);
-            document.getElementById('totalSol').textContent = total.toFixed(3);
-        }
+            // Per agent updates
+            for (const key in state.balances) {
+                const bal = state.balances[key];
+                const trades = state.trades[key];
+                const max = AGENT_MAP_BY_KEY[key].maxSol || 1.0;
 
-        function updateXP(key) {
-            state.trades[key]++;
-            const xpEl = document.getElementById(`xp-${key}`);
-            const xpVal = document.getElementById(`xpVal-${key}`);
-            const count = state.trades[key];
-            if (xpEl) xpEl.style.width = Math.min(100, count * 10) + '%';
-            if (xpVal) xpVal.textContent = `${count} trades`;
-        }
+                // HP Bar
+                const hpPer = Math.min(100, (bal / (max * 10)) * 100);
+                const hpBar = document.getElementById(`hp-${key}`);
+                if (hpBar) hpBar.style.width = `${hpPer}%`;
 
-        function setAction(key, type, text) {
-            const el = document.getElementById(`action-${key}`);
-            if (!el) return;
-            el.className = `last-action ${type}`;
-            const icons = { swap: '⚔️ ATTACK', hold: '🛡️ DEFEND', thinking: '💭 THINKING', error: '💀 MISS' };
-            el.innerHTML = `<div class="action-type">${icons[type] || '❓ ???'}</div>${text}`;
-        }
+                const hpVal = document.getElementById(`hpVal-${key}`);
+                if (hpVal) hpVal.innerText = `${bal.toFixed(4)} / ${(max * 10).toFixed(1)} SOL`;
 
-        function flashCard(key) {
-            const card = document.getElementById(`card-${key}`);
-            if (card) {
-                card.classList.remove('acting');
-                void card.offsetWidth;
-                card.classList.add('acting');
+                // XP Bar
+                const xpPer = Math.min(100, (trades / 10) * 100);
+                const xpBar = document.getElementById(`xp-${key}`);
+                if (xpBar) xpBar.style.width = `${xpPer}%`;
+
+                const xpVal = document.getElementById(`xpVal-${key}`);
+                if (xpVal) xpVal.innerText = `${trades} trades`;
             }
         }
 
-        function floatDamage(key, text, color) {
-            const card = document.getElementById(`card-${key}`);
-            if (!card) return;
-            const el = document.createElement('div');
-            el.className = 'damage-float';
-            el.textContent = text;
-            el.style.color = color || 'var(--gold)';
-            el.style.left = (40 + Math.random() * 60) + 'px';
-            el.style.top = '20px';
-            card.style.position = 'relative';
-            card.appendChild(el);
-            setTimeout(() => el.remove(), 1500);
+        // ═══════════════════════════════════════════
+        // DATA FETCHING
+        // ═══════════════════════════════════════════
+
+        async function fetchBalances() {
+            try {
+                for (const agentId of ['agent-momentum-01', 'agent-conservative-02', 'agent-rebalancer-03']) {
+                    const res = await fetch(`${API_BASE}/vault/balance/${agentId}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        const key = AGENT_MAP[agentId].key;
+                        state.balances[key] = data.sol;
+                    }
+                }
+                updateUI();
+            } catch (err) {
+                console.error('Fetch balances failed:', err);
+            }
         }
-
-
-        // ═══════════════════════════════════════════
-        // API POLLING
-        // ═══════════════════════════════════════════
 
         async function checkHealth() {
             try {
                 const res = await fetch(`${API_BASE}/vault/health`);
-                const data = await res.json();
-                state.apiOnline = data.status === 'ok';
-                document.getElementById('apiDot').className = `status-dot ${state.apiOnline ? 'online' : 'offline'}`;
-                document.getElementById('apiStatus').textContent = state.apiOnline ? 'vault: online' : 'vault: down';
-            } catch {
+                state.apiOnline = res.ok;
+                updateUI();
+            } catch (err) {
                 state.apiOnline = false;
-                document.getElementById('apiDot').className = 'status-dot offline';
-                document.getElementById('apiStatus').textContent = 'vault: offline';
-            }
-        }
-
-        async function fetchBalances() {
-            const agents = [
-                { id: 'agent-momentum-01', key: 'momentum' },
-                { id: 'agent-conservative-02', key: 'conservative' },
-                { id: 'agent-rebalancer-03', key: 'rebalancer' },
-            ];
-
-            for (const agent of agents) {
-                try {
-                    const res = await fetch(`${API_BASE}/vault/balance/${agent.id}`);
-                    const data = await res.json();
-                    if (data.sol !== undefined) {
-                        updateHP(agent.key, data.sol);
-                    }
-                } catch { /* silent */ }
+                updateUI();
             }
         }
 
         // ═══════════════════════════════════════════
-        // SSE EVENT STREAM
+        // SSE FEED
         // ═══════════════════════════════════════════
 
         function connectSSE() {
-            const evtSource = new EventSource(`${API_BASE}/vault/events`);
+            const events = new EventSource(`${API_BASE}/vault/events`);
 
-            evtSource.onopen = () => {
+            events.onopen = () => {
                 state.sseConnected = true;
-                document.getElementById('sseDot').className = 'status-dot online';
-                document.getElementById('sseStatus').textContent = 'events: live';
-                addLog('momentum', 'berserker', 'Connected to the Vault event stream!', 'success');
+                updateUI();
             };
 
-            evtSource.onmessage = (e) => {
-                try {
-                    const event = JSON.parse(e.data);
-                    handleEvent(event);
-                } catch { /* ignore parse errors */ }
-            };
-
-            evtSource.onerror = () => {
+            events.onerror = () => {
                 state.sseConnected = false;
-                document.getElementById('sseDot').className = 'status-dot offline';
-                document.getElementById('sseStatus').textContent = 'events: reconnecting...';
+                updateUI();
+            };
+
+            events.onmessage = (e) => {
+                const event = JSON.parse(e.data);
+                handleEvent(event);
             };
         }
 
         function handleEvent(event) {
-            const agentInfo = AGENT_MAP[event.agentId];
-            if (!agentInfo) return;
+            const data = AGENT_MAP[event.agentId];
+            if (!data) return;
 
-            const { key, name, cls } = agentInfo;
+            const key = data.key;
 
             switch (event.type) {
-                case 'tick':
-                    state.totalTicks++;
-                    document.getElementById('totalTicks').textContent = state.totalTicks;
-                    if (event.data?.balance !== undefined) {
-                        updateHP(key, event.data.balance.sol);
-                    }
-                    setAction(key, 'thinking', `Surveying the battlefield...`);
-                    addLog(key, cls, `surveys the dungeon...`, '');
-                    break;
-
-                case 'reasoning':
-                    // Map reasoning to the dialogue box
-                    const reasoning = event.data?.decision?.reasoning || event.data?.reasoning || '';
-                    if (reasoning) {
-                        setAction(key, 'thinking', `"${reasoning.slice(0, 40)}..."`);
-                        addLog(key, cls, `thinks: "${reasoning}"`, '');
-                    }
-                    break;
-
-                case 'decision':
-                    const decisionAction = event.data?.decision?.action || event.data?.action || 'HOLD';
-                    const decisionConf = event.data?.decision?.confidence || event.data?.confidence;
-                    const confLabel = decisionConf !== undefined ? `${(decisionConf * 100).toFixed(0)}%` : 'N/A';
-
-                    if (decisionAction === 'SWAP' || decisionAction === 'STRIKE') {
-                        setAction(key, 'swap', `Attacking! Confidence: ${confLabel}`);
-                        flashCard(key);
-                        floatDamage(key, `⚔️ ${decisionAction}!`, 'var(--gold)');
-                        addLog(key, cls, `uses <strong>${decisionAction}</strong>! (${confLabel} confidence)`, 'gold');
-                    } else {
-                        state.totalHolds++;
-                        document.getElementById('totalHolds').textContent = state.totalHolds;
-                        setAction(key, 'hold', `Holding position. Confidence: ${confLabel}`);
-                        floatDamage(key, '🛡️ HOLD', 'var(--mp-blue)');
-                        addLog(key, cls, `defends! Holding position. (${confLabel} confidence)`, '');
-                    }
-                    break;
-
                 case 'tx_executed':
-                case 'tx_result':
-                    const success = event.data?.result?.success ?? event.data?.success;
-                    if (success) {
-                        state.totalTrades++;
-                        document.getElementById('totalTrades').textContent = state.totalTrades;
-                        updateXP(key);
-                        floatDamage(key, '+XP!', 'var(--xp-purple)');
-                        const sig = (event.data?.result?.signature || event.data?.signature || '').slice(0, 12);
-                        addLog(key, cls, `quest complete! tx: ${sig}...`, 'success');
-                        setAction(key, 'swap', `✅ Victory! tx: ${sig}...`);
-                    } else {
-                        floatDamage(key, 'MISS!', 'var(--danger)');
-                        addLog(key, cls, `attack missed! ${event.data?.reason || ''}`, 'danger');
-                        setAction(key, 'error', `❌ Failed: ${event.data?.reason || 'unknown'}`);
-                    }
+                    state.trades[key]++;
+                    state.totalTrades++;
+                    addLog(key, data.cls, `SUCCESS! Executed ${event.data.intent.action} intent. Signature: ${event.data.signature.slice(0, 8)}...`, 'success');
+                    updateAction(key, '⚔️ ACTION', `Executed ${event.data.intent.action} for ${event.data.intent.reasoning}`);
+                    fetchBalances();
                     break;
 
                 case 'tx_blocked':
-                    floatDamage(key, '🚫 BLOCKED', 'var(--danger)');
-                    addLog(key, cls, `was blocked by the Rule Guardian! ${event.data?.reason || ''}`, 'danger');
-                    setAction(key, 'error', `🚫 Blocked: ${event.data?.reason || 'rules'}`);
+                    addLog(key, data.cls, `BLOCKED! Intent rejected by policy: ${event.data.reason}`, 'danger');
+                    updateAction(key, '🛡️ BLOCKED', event.data.reason);
                     break;
 
-                case 'agent_paused':
-                    setAction(key, 'hold', '⏸️ Resting at the inn...');
-                    addLog(key, cls, 'retreats to the inn to rest.', '');
+                case 'policy_updated':
+                    const nextLimit = event.data.policy.maxLamportsPerTx / 1e9;
+                    state.limits[key] = nextLimit;
+                    const limitEl = document.getElementById(`limit-${key}`);
+                    if (limitEl) limitEl.innerText = `Limit: ${nextLimit.toFixed(2)} SOL`;
+                    addLog(key, data.cls, `Policy updated remotely. New cap: ${nextLimit.toFixed(2)} SOL.`, 'warning');
                     break;
+            }
+            updateUI();
+        }
 
-                case 'agent_resumed':
-                    setAction(key, 'thinking', '🏃 Returning to battle!');
-                    addLog(key, cls, 'returns from the inn, refreshed!', 'success');
-                    break;
+        function updateAction(key, type, msg) {
+            const el = document.getElementById(`action-${key}`);
+            if (el) {
+                el.innerHTML = `
+                    <div class="action-type">${type}</div>
+                    ${msg}
+                `;
             }
         }
 
         // ═══════════════════════════════════════════
-        // BOOT
+        // INITIALIZATION
         // ═══════════════════════════════════════════
 
         async function boot() {
-            addLog('momentum', 'berserker', 'BLADE unsheathes their blade...', '');
-            addLog('conservative', 'paladin', 'WARD raises their shield...', '');
-            addLog('rebalancer', 'alchemist', 'SAGE prepares their potions...', '');
-
             await checkHealth();
             await fetchBalances();
             connectSSE();
 
-            // Poll every 15s
-            setInterval(checkHealth, 15000);
-            setInterval(fetchBalances, 15000);
+            // Heartbeats
+            setInterval(checkHealth, 10000);
+            setInterval(fetchBalances, 30000);
+            setInterval(() => {
+                state.totalTicks++;
+                updateUI();
+            }, 5000);
         }
 
         boot();
-    </script>
 
+    </script>
 </body>
 
 </html>
