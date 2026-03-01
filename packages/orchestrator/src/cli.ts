@@ -27,8 +27,11 @@ events.onerror = () => {
 events.onmessage = (e: any) => {
     try {
         const event = JSON.parse(e.data);
+        if (event.type === 'connected' || event.type === 'tick') return;
+
         const time = new Date(event.timestamp).toLocaleTimeString();
-        const prefix = chalk.gray(`[${time}]`) + ' ' + chalk.bold.cyan(event.agentId.padEnd(22));
+        const agentName = event.agentId ? event.agentId : 'SYSTEM';
+        const prefix = chalk.gray(`[${time}]`) + ' ' + chalk.bold.cyan(agentName.padEnd(22));
 
         switch (event.type) {
             case 'reasoning':
