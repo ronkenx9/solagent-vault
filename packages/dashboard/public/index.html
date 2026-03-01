@@ -607,7 +607,7 @@
                 <div class="coin-face-small coin-back-small"></div>
             </div>
         </div>
-        <div class="vault-total-retro-value" id="globalTotalSol">0.00 SOL</div>
+        <div class="vault-total-retro-value" id="globalTotalSol">0.000 SOL</div>
     </div>
 
     <!-- STATUS BAR -->
@@ -636,8 +636,9 @@
                 </div>
                 <div class="char-info">
                     <div class="char-name berserker">BLADE</div>
-                    <div class="char-class">Berserker · momentum trader</div>
-                    <div class="char-level">LV 1 &nbsp;⚡ AGR</div>
+                    <div class="char-class" style="letter-spacing: 1px;">BERSERKER · MOMENTUM TRADER</div>
+                    <div class="char-level" style="margin-top: 10px;">LV 1 &nbsp;&nbsp;<span style="color: #fbbf24;">⚡
+                            AGR</span></div>
                 </div>
             </div>
             <div class="stat-bars">
@@ -691,8 +692,9 @@
                 </div>
                 <div class="char-info">
                     <div class="char-name paladin">WARD</div>
-                    <div class="char-class">Paladin · conservative holder</div>
-                    <div class="char-level">LV 1 &nbsp;🛡️ DEF</div>
+                    <div class="char-class" style="letter-spacing: 1px;">PALADIN · CONSERVATIVE HOLDER</div>
+                    <div class="char-level" style="margin-top: 10px;">LV 1 &nbsp;&nbsp;<span style="color: #60a5fa;">🛡️
+                            DEF</span></div>
                 </div>
             </div>
             <div class="stat-bars">
@@ -746,8 +748,9 @@
                 </div>
                 <div class="char-info">
                     <div class="char-name alchemist">SAGE</div>
-                    <div class="char-class">Alchemist · portfolio rebalancer</div>
-                    <div class="char-level">LV 1 &nbsp;⚖️ BAL</div>
+                    <div class="char-class" style="letter-spacing: 1px;">ALCHEMIST · PORTFOLIO REBALANCER</div>
+                    <div class="char-level" style="margin-top: 10px;">LV 1 &nbsp;&nbsp;<span style="color: #a78bfa;">⚖️
+                            BAL</span></div>
                 </div>
             </div>
             <div class="stat-bars">
@@ -1106,7 +1109,7 @@
 
             // Update Global Total DOM
             const globalEl = document.getElementById('globalTotalSol');
-            if (globalEl) globalEl.innerText = `${globalTotal.toFixed(4)} SOL`;
+            if (globalEl) globalEl.innerText = `${globalTotal.toFixed(3)} SOL`;
         }
 
         // ═══════════════════════════════════════════
