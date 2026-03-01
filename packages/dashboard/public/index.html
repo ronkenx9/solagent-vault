@@ -530,7 +530,7 @@
             height: 100%;
             position: relative;
             transform-style: preserve-3d;
-            animation: spin 3s linear infinite;
+            animation: spin 4s ease-in-out infinite;
         }
 
         .coin-face-small {
@@ -564,11 +564,15 @@
 
         @keyframes spin {
             0% {
-                transform: rotateY(0deg);
+                transform: rotateY(-30deg);
+            }
+
+            50% {
+                transform: rotateY(30deg);
             }
 
             100% {
-                transform: rotateY(360deg);
+                transform: rotateY(-30deg);
             }
         }
 
