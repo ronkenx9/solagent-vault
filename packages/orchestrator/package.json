@@ -7,15 +7,18 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch --env-file=../../.env src/run.ts",
+    "cli": "tsx src/cli.ts",
     "start": "node dist/run.js",
     "test": "vitest"
   },
   "dependencies": {
-    "@solagent/vault-core": "workspace:*",
     "@solagent/agent-brain": "workspace:*",
-    "@solagent/shared": "workspace:*",
     "@solagent/dashboard": "workspace:*",
-    "dotenv": "^16.3.1"
+    "@solagent/shared": "workspace:*",
+    "@solagent/vault-core": "workspace:*",
+    "chalk": "^5.6.2",
+    "dotenv": "^16.3.1",
+    "eventsource": "^4.1.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

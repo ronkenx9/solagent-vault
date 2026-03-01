@@ -1086,14 +1086,23 @@
                 case 'tx_executed':
                     state.trades[key]++;
                     state.totalTrades++;
-                    addLog(key, data.cls, `SUCCESS! Executed ${event.data.intent.action} intent. Signature: ${event.data.signature.slice(0, 8)}...`, 'success');
-                    updateAction(key, '⚔️ ACTION', `Executed ${event.data.intent.action} for ${event.data.intent.reasoning}`);
+                    addLog(key, data.cls, `📜 SUCCESS! ${event.data.intent.action} intent signed with Immutable Policy Memo. Sig: ${event.data.signature.slice(0, 8)}...`, 'success');
+                    updateAction(key, '⚔️ SIGNED & MEMOED', `Executed ${event.data.intent.action} for ${event.data.intent.reasoning}`);
                     fetchBalances();
                     break;
 
                 case 'tx_blocked':
-                    addLog(key, data.cls, `BLOCKED! Intent rejected by policy: ${event.data.reason}`, 'danger');
-                    updateAction(key, '🛡️ BLOCKED', event.data.reason);
+                    const reason = event.data.reason || '';
+                    if (reason.includes("Rent Upkeep")) {
+                        addLog(key, data.cls, `🔋 RENT SHIELD ACTIVATED! Vault intercepted agent to preserve SOL rent-exemption.`, 'warning');
+                        updateAction(key, '🔋 RENT SHIELD', 'Vault prevented agent from draining wallet.');
+                    } else if (reason.includes("Simulation") || reason.includes("static analysis")) {
+                        addLog(key, data.cls, `🛑 SIMULATION ORACLE FORESAW DOOM! Intent rejected by pre-flight checks: ${reason}`, 'danger');
+                        updateAction(key, '🛑 SIM FAILED', 'Vault simulation predicted malicious state change.');
+                    } else {
+                        addLog(key, data.cls, `🛡️ BLOCKED! Intent rejected by policy: ${reason}`, 'danger');
+                        updateAction(key, '🛡️ BLOCKED', reason);
+                    }
                     break;
 
                 case 'policy_updated':
