@@ -22,7 +22,9 @@ Autonomous wallets for AI agents are fundamentally different from user wallets:
 
 **The danger:** An agent with full wallet access can drain the entire balance in seconds if it malfunctions or is compromised.
 
-**Our solution:** Separate the decision engine from the signing engine. Rules live in a layer the agent cannot control.
+**The solution:** Separate the decision engine from the signing engine. Rules live in a layer the agent cannot control, but a human overseer can manage.
+
+**New in Final:** Human-in-the-loop governance enables real-time scaling of risk via the dashboard.
 
 ---
 
@@ -45,7 +47,15 @@ Autonomous wallets for AI agents are fundamentally different from user wallets:
 │   Enforces spending limits, rate limits                     │
 │   Signs ONLY if rules pass                                  │
 │   (trusted - master seed lives here)                        │
-└─────────────────────────────────────────────────────────────┘
+└──────────────────────┼─────────────────────────────────────┘
+                       │ signed tx
+                       ▼
+               Solana Devnet RPC
+                       │ SSE events
+                       ▼
+             ┌─────────────────────┐
+             │   Dashboard / API   │ ← Human overseer modifies policy
+             └─────────────────────┘
 ```
 
 If the LLM recommends a transaction that violates the policy, the vault rejects it **before** signing. The agent cannot override this because:

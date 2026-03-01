@@ -3,8 +3,11 @@
 > **Autonomous AI Agent Wallets on Solana** — A prototype demonstrating multi-agent wallet management, autonomous transaction signing, and LLM-driven trading decisions on Solana devnet.
 
 [![Devnet](https://img.shields.io/badge/network-devnet-blue)](https://explorer.solana.com)
+[![Vercel](https://img.shields.io/badge/deployed-vercel-black)](https://solagent-vault.vercel.app)
 [![Node](https://img.shields.io/badge/node-%3E%3D18-green)](https://nodejs.org)
 [![pnpm](https://img.shields.io/badge/pnpm-%3E%3D8-orange)](https://pnpm.io)
+
+### 🌍 [Live Dashboard: solagent-vault.vercel.app](https://solagent-vault.vercel.app)
 
 ---
 
@@ -24,14 +27,14 @@ Three AI agents (BLADE, WARD, SAGE) run simultaneously with different risk profi
 │       └─────────────┴─────────────┘                        │
 │                      ↓ intent                              │
 │               ┌──────────────┐                             │
-│               │  Vault Core  │ ← policy engine + signer    │
+│               │  Vault Core  │ ← Policy Engine + Signer    │
 │               └──────┬───────┘                             │
 └──────────────────────┼─────────────────────────────────────┘
                         ↓ signed tx
               Solana Devnet RPC
-                        ↓ SSE events
+                        ↓ SSE Events
               ┌─────────────────┐
-              │   Vault API     │ → Dashboard (localhost:3001)
+              │   Vault API     │ → Public Dashboard (Vercel)
               └─────────────────┘
 ```
 
@@ -58,7 +61,7 @@ cp .env.example .env
 
 Edit `.env`:
 ```env
-# Required: 24-word seed phrase for HD wallet derivation
+# Required: 24-word seed phrase for HD wallet derivation (VAULT_MASTER_SEED or MASTER_SEED)
 VAULT_MASTER_SEED="your twenty four word seed phrase here ..."
 
 # Required: Groq LLM API key
@@ -121,16 +124,12 @@ Open [http://localhost:3001](http://localhost:3001) to see the live RPG dashboar
 - **Private keys never leave vault-core** — agents submit intent objects, not signed transactions
 - The policy engine acts as a **trust boundary**: LLM decisions cannot bypass spending caps or program whitelists
 
-### Policy Engine
-Each agent has an on-chain policy registered at startup:
-```typescript
-{
-  maxLamportsPerTx: 500_000_000,  // 0.5 SOL hard cap
-  allowedPrograms: ['JUP6...'],   // only Jupiter-approved programs
-  maxTxPerMinute: 3,              // rate limiter
-  paused: false,                  // emergency stop
-}
-```
+### 🛠️ Policy Engine & Governance
+Each agent has an on-chain policy registered at startup, which can be dynamically managed from the dashboard:
+- **Interactive Control**: Use the **Level Up** and **Level Down** buttons on the dashboard to scale risk.
+- **Spending Caps**: Vault Core enforces `maxLamportsPerTx`.
+- **Program Whitelisting**: Only approved protocols (e.g. Jupiter) are signable.
+- **Emergency Stop**: Pause any agent instantly via the policy engine.
 
 ---
 

@@ -34,6 +34,20 @@ Handles secure key management and transaction execution for autonomous agents.
 
 ---
 
+### 🛡️ Human-in-the-Loop Governance
+The Vault exposes endpoints for human overseers to manage agent risk dynamically.
+
+**Governance Endpoints:**
+- `POST /vault/policy` — Updates an agent's policy (e.g. increase/decrease spending cap)
+- `POST /vault/pause/:agentId` — Instantly halts all transaction signing for an agent
+- `POST /vault/resume/:agentId` — Restores transaction capabilities
+
+**Dashboard Interaction:**
+- **Level Up**: Increases `maxLamportsPerTx` via the policy API.
+- **Level Down**: Decreases `maxLamportsPerTx` via the policy API.
+
+---
+
 ### 🧠 agent-brain
 The LLM-driven decision loop for an autonomous trading agent.
 
