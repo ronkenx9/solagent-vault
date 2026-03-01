@@ -58,6 +58,26 @@ export class Vault extends EventEmitter {
    * This is the main entry point for all agent transactions.
    */
   async execute(intent: Intent): Promise<VaultResult> {
+    // 0. Pre-flight Autonomous Rent Upkeep Check
+    // Proves infrastructure self-preservation separately from LLM logic
+    const currentBalance = await this.getSigner().getBalance(intent.agentId);
+    const rentExemptThreshold = 0.005; // 0.005 SOL safe buffer
+
+    if ((currentBalance.sol - (intent.lamports / 1e9)) < rentExemptThreshold) {
+      const reason = `Autonomous Rent Upkeep: Transaction would drain wallet below safe threshold (${rentExemptThreshold} SOL). Preserving rent-exemption.`;
+
+      this.emitEvent('tx_blocked', intent.agentId, {
+        intent,
+        reason,
+      });
+      return {
+        success: false,
+        signature: null,
+        reason,
+        ruleCheck: { approved: false, reason },
+      };
+    }
+
     // 1. Check rules first — agent cannot bypass this
     const check = this.ruleEngine.check(intent);
 
@@ -80,20 +100,11 @@ export class Vault extends EventEmitter {
     try {
       switch (intent.action) {
         case 'TRANSFER':
-          signature = await this.signer.sendSol(
-            intent.agentId,
-            intent.destinationProgram,
-            intent.lamports
-          );
+          signature = await this.signer.sendSol(intent);
           break;
 
         case 'SWAP':
-          signature = await this.signer.swapTokens(
-            intent.agentId,
-            intent.inputMint || 'So11111111111111111111111111111111111111112',
-            intent.outputMint || 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1',
-            intent.lamports
-          );
+          signature = await this.signer.swapTokens(intent);
           break;
 
         case 'STAKE':

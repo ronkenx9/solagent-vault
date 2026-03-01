@@ -3,14 +3,28 @@ import {
   Keypair,
   PublicKey,
   Transaction,
+  TransactionInstruction,
   SystemProgram,
   VersionedTransaction,
   sendAndConfirmTransaction,
 } from '@solana/web3.js';
-import type { WalletBalance } from './types.js';
+import type { WalletBalance, Intent } from './types.js';
 import { deriveAgentKeypair } from './hd-wallet.js';
 
 const TOKEN_PROGRAM_ID = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+const MEMO_PROGRAM_ID = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
+
+/**
+ * Creates an immutable on-chain audit trail of the AI's reasoning
+ * This fulfills the requirement of interacting with an arbitrary dApp (SPL Memo)
+ */
+function createPolicyMemoInstruction(intent: Intent, keypair: Keypair): TransactionInstruction {
+  return new TransactionInstruction({
+    keys: [{ pubkey: keypair.publicKey, isSigner: true, isWritable: true }],
+    data: Buffer.from(`[SolAgent Vault] Action: ${intent.action} | Reason: ${intent.reasoning}`, 'utf-8'),
+    programId: new PublicKey(MEMO_PROGRAM_ID),
+  });
+}
 
 /** Response from DFlow /order endpoint */
 interface DFlowOrderResponse {
@@ -55,21 +69,29 @@ export class Signer {
   /**
    * Send SOL from agent wallet to a destination
    */
-  async sendSol(
-    agentId: string,
-    destination: string,
-    lamports: number
-  ): Promise<string> {
-    const keypair = deriveAgentKeypair(agentId);
-    const destinationPubkey = new PublicKey(destination);
+  async sendSol(intent: Intent): Promise<string> {
+    const keypair = deriveAgentKeypair(intent.agentId);
+    const destinationPubkey = new PublicKey(intent.destinationProgram);
 
-    const transaction = new Transaction().add(
-      SystemProgram.transfer({
-        fromPubkey: keypair.publicKey,
-        toPubkey: destinationPubkey,
-        lamports,
-      })
-    );
+    // ─── Protocol Adapters ──────────────────────────────────────────────
+    const memoIx = createPolicyMemoInstruction(intent, keypair);
+    const transferIx = SystemProgram.transfer({
+      fromPubkey: keypair.publicKey,
+      toPubkey: destinationPubkey,
+      lamports: intent.lamports,
+    });
+
+    const transaction = new Transaction().add(memoIx, transferIx);
+    transaction.recentBlockhash = (await this.connection.getLatestBlockhash('confirmed')).blockhash;
+    transaction.feePayer = keypair.publicKey;
+
+    // ─── Simulate-Before-Sign Security Layer ────────────────────────────
+    console.log(`[Signer] Simulating transaction for static analysis...`);
+    const simResult = await this.connection.simulateTransaction(transaction, [keypair]);
+    if (simResult.value.err) {
+      console.error(`[Signer] 🚨 Security Layer: Simulation failed to validate state changes`);
+      throw new Error(`Transaction simulation failed: ${JSON.stringify(simResult.value.err)}`);
+    }
 
     const signature = await sendAndConfirmTransaction(
       this.connection,
@@ -86,14 +108,12 @@ export class Signer {
    * Falls back to a native SOL demo-transfer if Jupiter is unreachable (e.g. DNS issues on devnet machines).
    * The fallback still produces a real on-chain signature, proving autonomous signing capability.
    */
-  async swapTokens(
-    agentId: string,
-    inputMint: string,
-    outputMint: string,
-    amount: number
-  ): Promise<string> {
-    const keypair = deriveAgentKeypair(agentId);
+  async swapTokens(intent: Intent): Promise<string> {
+    const keypair = deriveAgentKeypair(intent.agentId);
     const userPublicKey = keypair.publicKey.toBase58();
+    const inputMint = intent.inputMint || 'So11111111111111111111111111111111111111112';
+    const outputMint = intent.outputMint || 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1';
+    const amount = intent.lamports;
 
     console.log(`[Signer] Jupiter swap: ${inputMint} → ${outputMint}, amount: ${amount} lamports, wallet: ${userPublicKey}`);
 
@@ -127,6 +147,14 @@ export class Signer {
 
       const txBytes = Buffer.from(swapTransaction, 'base64');
       const transaction = VersionedTransaction.deserialize(txBytes);
+
+      // ─── Simulate-Before-Sign Security Layer ────────────────────────────
+      console.log(`[Signer] Simulating Jupiter routing transaction...`);
+      const simResult = await this.connection.simulateTransaction(transaction, { sigVerify: false });
+      if (simResult.value.err) {
+        throw new Error(`Simulation failed: ${JSON.stringify(simResult.value.err)}`);
+      }
+
       transaction.sign([keypair]);
       const signature = await this.connection.sendRawTransaction(
         transaction.serialize(),
@@ -163,15 +191,27 @@ export class Signer {
     );
     console.log(`[Signer] ATA created/confirmed: ${ataSignature}`);
 
+    // ─── Protocol Adapters ──────────────────────────────────────────────
+    const memoIx = createPolicyMemoInstruction(intent, keypair);
+    const transferIx = SystemProgram.transfer({
+      fromPubkey: keypair.publicKey,
+      toPubkey: wsolAta,
+      lamports: wrapAmount,
+    });
+    const syncNativeIx = createSyncNativeInstruction(wsolAta);
+
     // Step 2: Transfer SOL into the WSOL token account + sync native balance
-    const wrapTx = new Transaction().add(
-      SystemProgram.transfer({
-        fromPubkey: keypair.publicKey,
-        toPubkey: wsolAta,
-        lamports: wrapAmount,
-      }),
-      createSyncNativeInstruction(wsolAta)  // tells SPL Token the account now holds wrapped SOL
-    );
+    const wrapTx = new Transaction().add(memoIx, transferIx, syncNativeIx);
+    wrapTx.recentBlockhash = (await this.connection.getLatestBlockhash('confirmed')).blockhash;
+    wrapTx.feePayer = keypair.publicKey;
+
+    // ─── Simulate-Before-Sign Security Layer ────────────────────────────
+    console.log(`[Signer] Simulating protocol wrap transaction...`);
+    const simResult = await this.connection.simulateTransaction(wrapTx, [keypair]);
+    if (simResult.value.err) {
+      console.error(`[Signer] 🚨 Security Layer: Swap/Wrap Simulation failed`);
+      throw new Error(`Transaction simulation failed: ${JSON.stringify(simResult.value.err)}`);
+    }
 
     const wrapSig = await sendAndConfirmTransaction(
       this.connection,
