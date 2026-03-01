@@ -79,6 +79,27 @@ async function main() {
   // Initialize and start
   await orchestrator.initialize();
 
+  // Sync active agents to the Vault API so the Dashboard dynamically renders them
+  for (const agent of orchestrator.getAllAgentStatuses()) {
+    const policy = orchestrator.getVault().getPolicy(agent.id);
+    if (policy) {
+      try {
+        await fetch(`${VAULT_API}/vault/policy`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            agent_id: policy.agentId,
+            max_lamports_per_tx: policy.maxLamportsPerTx,
+            allowed_programs: policy.allowedPrograms,
+            max_tx_per_minute: policy.maxTxPerMinute,
+          }),
+        });
+      } catch (err) {
+        console.warn(`[Orchestrator] Failed to sync policy to API for ${agent.id}`);
+      }
+    }
+  }
+
   console.log('\n📊 Dashboard running. Press Ctrl+C to stop.\n');
 
   await orchestrator.start();

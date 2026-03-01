@@ -269,15 +269,15 @@ export function createDefaultAgentConfigs(): OrchestratorAgentConfig[] {
   return [
     // ── BLADE and WARD disabled to save LLM costs ──
     // Re-enable by uncommenting:
-    // {
-    //   id: 'agent-momentum-01',
-    //   strategy: { ...DEFAULT_STRATEGIES.MOMENTUM_TRADER, targetTokens: [...DEFAULT_STRATEGIES.MOMENTUM_TRADER.targetTokens] },
-    //   policies: {
-    //     maxLamportsPerTx: 500_000_000,
-    //     allowedPrograms: ['JUP6LkbZbjS1jKKwapdHNy74zaZWiGdp52teN2pLr'],
-    //     maxTxPerMinute: 3,
-    //   },
-    // },
+    {
+      id: 'agent-momentum-01',
+      strategy: { ...DEFAULT_STRATEGIES.MOMENTUM_TRADER, targetTokens: [...DEFAULT_STRATEGIES.MOMENTUM_TRADER.targetTokens] },
+      policies: {
+        maxLamportsPerTx: 500_000_000,
+        allowedPrograms: ['JUP6LkbZbjS1jKKwapdHNy74zaZWiGdp52teN2pLr'],
+        maxTxPerMinute: 3,
+      },
+    },
     // {
     //   id: 'agent-conservative-02',
     //   strategy: { ...DEFAULT_STRATEGIES.CONSERVATIVE_HOLDER, targetTokens: [...DEFAULT_STRATEGIES.CONSERVATIVE_HOLDER.targetTokens] },
