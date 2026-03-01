@@ -1,14 +1,18 @@
 import { EventSource } from 'eventsource';
 import chalk from 'chalk';
+import figlet from 'figlet';
 
 const API_BASE = 'http://localhost:3001';
 
 console.clear();
-console.log(chalk.bold.magenta('==================================================='));
-console.log(chalk.bold.magenta('⚔️  SOLAGENT VAULT V2 — TERMINAL MISSION CONTROL ⚔️'));
-console.log(chalk.bold.magenta('===================================================\n'));
-
-console.log(chalk.gray('Connecting to vault-api stream at ' + API_BASE + '...'));
+console.log(
+    chalk.magenta(
+        figlet.textSync('SolAgent Vault', { horizontalLayout: 'fitted' })
+    )
+);
+console.log(chalk.bold.cyan('             V2 AGENTIC WALLET SECURE TERMINAL UPLINK ⚔️\n'));
+console.log(chalk.gray('  Status:') + chalk.green(' ONLINE') + chalk.gray('   |   ') + chalk.gray('Target:') + chalk.cyan(` ${API_BASE}`));
+console.log(chalk.bold.magenta('========================================================================\n'));
 
 const events = new EventSource(`${API_BASE}/vault/events`);
 
