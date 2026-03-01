@@ -54,6 +54,13 @@ export class Vault extends EventEmitter {
   }
 
   /**
+   * Get all registered policies (agents)
+   */
+  getAllPolicies(): AgentPolicy[] {
+    return this.ruleEngine.getAllPolicies();
+  }
+
+  /**
    * Execute an intent from an agent.
    * This is the main entry point for all agent transactions.
    */

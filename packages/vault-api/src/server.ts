@@ -172,6 +172,19 @@ app.get('/vault/policy/:agentId', (req: Request, res: Response) => {
 });
 
 /**
+ * GET /vault/agents — Get all registered agents
+ */
+app.get('/vault/agents', (_req: Request, res: Response) => {
+    try {
+        const policies = vault.getAllPolicies();
+        return res.json({ agents: policies });
+    } catch (error) {
+        const msg = error instanceof Error ? error.message : 'Unknown error';
+        return res.status(500).json({ error: 'AGENTS_ERROR', message: msg });
+    }
+});
+
+/**
  * POST /vault/pause/:agentId — Emergency pause an agent
  */
 app.post('/vault/pause/:agentId', (req: Request, res: Response) => {

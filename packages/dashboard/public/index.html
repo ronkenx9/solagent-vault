@@ -626,174 +626,7 @@
     </div>
 
     <div class="party-grid" id="partyGrid">
-
-        <!-- BLADE the Berserker -->
-        <div class="char-card pixel-border-gold" id="card-momentum" data-agent="agent-momentum-01">
-            <div class="char-header">
-                <div class="char-avatar idle-bounce">
-                    <canvas id="avatar-momentum" width="16" height="16"></canvas>
-                    <span class="char-class-badge">🗡️</span>
-                </div>
-                <div class="char-info">
-                    <div class="char-name berserker">BLADE</div>
-                    <div class="char-class" style="letter-spacing: 1px;">BERSERKER · MOMENTUM TRADER</div>
-                    <div class="char-level" style="margin-top: 10px;">LV 1 &nbsp;&nbsp;<span style="color: #fbbf24;">⚡
-                            AGR</span></div>
-                </div>
-            </div>
-            <div class="stat-bars">
-                <div class="stat-row">
-                    <span class="stat-label hp">HP</span>
-                    <div class="stat-bar-track pixel-border">
-                        <div class="stat-bar-fill hp" id="hp-momentum" style="width:0%"></div>
-                    </div>
-                    <span class="stat-value" id="hpVal-momentum">0 / 2.5 SOL</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label mp">MP</span>
-                    <div class="stat-bar-track pixel-border">
-                        <div class="stat-bar-fill mp" id="mp-momentum" style="width:100%"></div>
-                    </div>
-                    <span class="stat-value">3 tx/min</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label xp">XP</span>
-                    <div class="stat-bar-track pixel-border">
-                        <div class="stat-bar-fill xp" id="xp-momentum" style="width:0%"></div>
-                    </div>
-                    <span class="stat-value" id="xpVal-momentum">0 trades</span>
-                </div>
-            </div>
-            <div class="equipment">
-                <div class="equip-slot"><span class="equip-icon">⚔️</span> Aggressive</div>
-                <div class="equip-slot"><span class="equip-icon">🎯</span> High risk</div>
-            </div>
-            <div class="limit-display" id="limit-momentum">Limit: 0.50 SOL</div>
-            <div class="policy-controls">
-                <button class="level-btn up" onclick="levelUp('agent-momentum-01')">
-                    <span>🌟</span> UP
-                </button>
-                <button class="level-btn down" onclick="levelDown('agent-momentum-01')">
-                    <span>💀</span> DOWN
-                </button>
-            </div>
-            <div class="last-action" id="action-momentum">
-                <div class="action-type">💤 IDLE</div>
-                Waiting for quest to begin...
-            </div>
-        </div>
-
-        <!-- WARD the Paladin -->
-        <div class="char-card pixel-border-gold" id="card-conservative" data-agent="agent-conservative-02">
-            <div class="char-header">
-                <div class="char-avatar idle-bounce" style="animation-delay: 0.5s;">
-                    <canvas id="avatar-conservative" width="16" height="16"></canvas>
-                    <span class="char-class-badge">🛡️</span>
-                </div>
-                <div class="char-info">
-                    <div class="char-name paladin">WARD</div>
-                    <div class="char-class" style="letter-spacing: 1px;">PALADIN · CONSERVATIVE HOLDER</div>
-                    <div class="char-level" style="margin-top: 10px;">LV 1 &nbsp;&nbsp;<span style="color: #60a5fa;">🛡️
-                            DEF</span></div>
-                </div>
-            </div>
-            <div class="stat-bars">
-                <div class="stat-row">
-                    <span class="stat-label hp">HP</span>
-                    <div class="stat-bar-track pixel-border">
-                        <div class="stat-bar-fill hp" id="hp-conservative" style="width:0%"></div>
-                    </div>
-                    <span class="stat-value" id="hpVal-conservative">0 / 0.5 SOL</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label mp">MP</span>
-                    <div class="stat-bar-track pixel-border">
-                        <div class="stat-bar-fill mp" id="mp-conservative" style="width:100%"></div>
-                    </div>
-                    <span class="stat-value">1 tx/min</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label xp">XP</span>
-                    <div class="stat-bar-track pixel-border">
-                        <div class="stat-bar-fill xp" id="xp-conservative" style="width:0%"></div>
-                    </div>
-                    <span class="stat-value" id="xpVal-conservative">0 trades</span>
-                </div>
-            </div>
-            <div class="equipment">
-                <div class="equip-slot"><span class="equip-icon">🛡️</span> Conservative</div>
-                <div class="equip-slot"><span class="equip-icon">🧘</span> Low risk</div>
-            </div>
-            <div class="limit-display" id="limit-conservative">Limit: 0.50 SOL</div>
-            <div class="policy-controls">
-                <button class="level-btn up" onclick="levelUp('agent-conservative-02')">
-                    <span>🌟</span> UP
-                </button>
-                <button class="level-btn down" onclick="levelDown('agent-conservative-02')">
-                    <span>💀</span> DOWN
-                </button>
-            </div>
-            <div class="last-action" id="action-conservative">
-                <div class="action-type">💤 IDLE</div>
-                Meditating before the quest...
-            </div>
-        </div>
-
-        <!-- SAGE the Alchemist -->
-        <div class="char-card pixel-border-gold" id="card-rebalancer" data-agent="agent-rebalancer-03">
-            <div class="char-header">
-                <div class="char-avatar idle-bounce" style="animation-delay: 1s;">
-                    <canvas id="avatar-rebalancer" width="16" height="16"></canvas>
-                    <span class="char-class-badge">⚗️</span>
-                </div>
-                <div class="char-info">
-                    <div class="char-name alchemist">SAGE</div>
-                    <div class="char-class" style="letter-spacing: 1px;">ALCHEMIST · PORTFOLIO REBALANCER</div>
-                    <div class="char-level" style="margin-top: 10px;">LV 1 &nbsp;&nbsp;<span style="color: #a78bfa;">⚖️
-                            BAL</span></div>
-                </div>
-            </div>
-            <div class="stat-bars">
-                <div class="stat-row">
-                    <span class="stat-label hp">HP</span>
-                    <div class="stat-bar-track pixel-border">
-                        <div class="stat-bar-fill hp" id="hp-rebalancer" style="width:0%"></div>
-                    </div>
-                    <span class="stat-value" id="hpVal-rebalancer">0 / 5.0 SOL</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label mp">MP</span>
-                    <div class="stat-bar-track pixel-border">
-                        <div class="stat-bar-fill mp" id="mp-rebalancer" style="width:100%"></div>
-                    </div>
-                    <span class="stat-value">2 tx/min</span>
-                </div>
-                <div class="stat-row">
-                    <span class="stat-label xp">XP</span>
-                    <div class="stat-bar-track pixel-border">
-                        <div class="stat-bar-fill xp" id="xp-rebalancer" style="width:0%"></div>
-                    </div>
-                    <span class="stat-value" id="xpVal-rebalancer">0 trades</span>
-                </div>
-            </div>
-            <div class="equipment">
-                <div class="equip-slot"><span class="equip-icon">⚗️</span> Precision</div>
-                <div class="equip-slot"><span class="equip-icon">⚖️</span> Med risk</div>
-            </div>
-            <div class="limit-display" id="limit-rebalancer">Limit: 0.50 SOL</div>
-            <div class="policy-controls">
-                <button class="level-btn up" onclick="levelUp('agent-rebalancer-03')">
-                    <span>🌟</span> UP
-                </button>
-                <button class="level-btn down" onclick="levelDown('agent-rebalancer-03')">
-                    <span>💀</span> DOWN
-                </button>
-            </div>
-            <div class="last-action" id="action-rebalancer">
-                <div class="action-type">💤 IDLE</div>
-                Preparing transmutation circle...
-            </div>
-        </div>
+        <!-- Agents will be dynamically injected here via JS -->
     </div>
 
     <!-- ═══ PARTY STATS ═══ -->
@@ -924,25 +757,13 @@
             ? 'http://localhost:3001'
             : '';
 
-        const AGENT_MAP = {
-            'agent-momentum-01': { key: 'momentum', name: 'BLADE', cls: 'berserker', maxSol: 0.01 },
-            'agent-conservative-02': { key: 'conservative', name: 'WARD', cls: 'paladin', maxSol: 0.002 },
-            'agent-rebalancer-03': { key: 'rebalancer', name: 'SAGE', cls: 'alchemist', maxSol: 0.005 },
-            'momentum-trader': { key: 'momentum', name: 'BLADE', cls: 'berserker', maxSol: 0.01 },
-            'conservative-holder': { key: 'conservative', name: 'WARD', cls: 'paladin', maxSol: 0.002 },
-            'rebalancer': { key: 'rebalancer', name: 'SAGE', cls: 'alchemist', maxSol: 0.005 },
-        };
-
-        const AGENT_MAP_BY_KEY = {
-            momentum: { name: 'BLADE', cls: 'berserker' },
-            conservative: { name: 'WARD', cls: 'paladin' },
-            rebalancer: { name: 'SAGE', cls: 'alchemist' },
-        };
+        let AGENT_MAP = {};
+        let AGENT_MAP_BY_KEY = {};
 
         const state = {
-            balances: { momentum: 0, conservative: 0, rebalancer: 0 },
-            trades: { momentum: 0, conservative: 0, rebalancer: 0 },
-            limits: { momentum: 0.5, conservative: 0.5, rebalancer: 0.5 },
+            balances: {},
+            trades: {},
+            limits: {},
             totalTrades: 0,
             totalHolds: 0,
             totalTicks: 0,
@@ -1118,7 +939,8 @@
 
         async function fetchBalances() {
             try {
-                for (const agentId of ['agent-momentum-01', 'agent-conservative-02', 'agent-rebalancer-03']) {
+                const agentIds = Object.keys(AGENT_MAP).filter(id => !id.includes('-trader') && !id.includes('-holder') && id !== 'rebalancer'); // Filter out aliases if any
+                for (const agentId of agentIds) {
                     const res = await fetch(`${API_BASE}/vault/balance/${agentId}`);
                     if (res.ok) {
                         const data = await res.json();
@@ -1129,6 +951,99 @@
                 updateUI();
             } catch (err) {
                 console.error('Fetch balances failed:', err);
+            }
+        }
+
+        async function loadAgents() {
+            try {
+                const res = await fetch(`${API_BASE}/vault/agents`);
+                if (!res.ok) throw new Error('Failed to fetch agents');
+                const data = await res.json();
+
+                const grid = document.getElementById('partyGrid');
+                grid.innerHTML = '';
+
+                const classes = ['berserker', 'paladin', 'alchemist'];
+                const classIcons = ['🗡️', '🛡️', '⚗️'];
+                const avatars = ['momentum', 'conservative', 'rebalancer'];
+
+                data.agents.forEach((policy, index) => {
+                    // Extract agent name uniquely or just use part of ID
+                    const rawName = policy.agentId.split('-')[0].toUpperCase();
+                    const cleanName = rawName === 'AGENT' ? policy.agentId.split('-')[1].toUpperCase() : rawName;
+                    const key = `agent_${index}`;
+
+                    const clsIdx = index % classes.length;
+                    const charCls = classes[clsIdx];
+                    const charIcon = classIcons[clsIdx];
+                    const avatarType = avatars[clsIdx];
+
+                    const limit = policy.maxLamportsPerTx / 1e9;
+                    const maxSol = limit * 5; // Visual max capacity
+
+                    AGENT_MAP[policy.agentId] = { key, name: cleanName, cls: charCls, maxSol };
+                    AGENT_MAP_BY_KEY[key] = { name: cleanName, cls: charCls };
+
+                    state.balances[key] = 0;
+                    state.trades[key] = 0;
+                    state.limits[key] = limit;
+
+                    const card = document.createElement('div');
+                    card.className = "char-card pixel-border-gold";
+                    card.id = `card-${key}`;
+                    card.innerHTML = `
+                        <div class="char-header">
+                            <div class="char-avatar idle-bounce" style="animation-delay: ${index * 0.5}s;">
+                                <canvas id="avatar-${key}" width="16" height="16"></canvas>
+                                <span class="char-class-badge">${charIcon}</span>
+                            </div>
+                            <div class="char-info">
+                                <div class="char-name ${charCls}">${cleanName}</div>
+                                <div class="char-class" style="letter-spacing: 1px;">VAULT AGENT · ${policy.agentId.substring(0, 8)}...</div>
+                                <div class="char-level" style="margin-top: 10px;">LV 1</div>
+                            </div>
+                        </div>
+                        <div class="stat-bars">
+                            <div class="stat-row">
+                                <span class="stat-label hp">HP</span>
+                                <div class="stat-bar-track pixel-border">
+                                    <div class="stat-bar-fill hp" id="hp-${key}" style="width:0%"></div>
+                                </div>
+                                <span class="stat-value" id="hpVal-${key}">0 / ${maxSol.toFixed(1)} SOL</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label mp">MP</span>
+                                <div class="stat-bar-track pixel-border">
+                                    <div class="stat-bar-fill mp" id="mp-${key}" style="width:100%"></div>
+                                </div>
+                                <span class="stat-value">${policy.maxTxPerMinute} tx/min</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label xp">XP</span>
+                                <div class="stat-bar-track pixel-border">
+                                    <div class="stat-bar-fill xp" id="xp-${key}" style="width:0%"></div>
+                                </div>
+                                <span class="stat-value" id="xpVal-${key}">0 trades</span>
+                            </div>
+                        </div>
+                        <div class="limit-display" id="limit-${key}">Limit: ${limit.toFixed(2)} SOL</div>
+                        <div class="policy-controls">
+                            <button class="level-btn up" onclick="levelUp('${policy.agentId}')"><span>🌟</span> UP</button>
+                            <button class="level-btn down" onclick="levelDown('${policy.agentId}')"><span>💀</span> DOWN</button>
+                        </div>
+                        <div class="last-action" id="action-${key}">
+                            <div class="action-type">💤 IDLE</div>
+                            Waiting for quest to begin...
+                        </div>
+                    `;
+                    grid.appendChild(card);
+
+                    // Draw Avatar after mount 
+                    setTimeout(() => drawAvatar(`avatar-${key}`, avatarType), 10);
+                });
+
+            } catch (err) {
+                console.error("Failed to load agents:", err);
             }
         }
 
@@ -1222,7 +1137,10 @@
 
         async function boot() {
             await checkHealth();
-            await fetchBalances();
+            if (state.apiOnline) {
+                await loadAgents();
+                await fetchBalances();
+            }
             connectSSE();
 
             // Heartbeats

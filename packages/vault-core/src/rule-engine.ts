@@ -31,6 +31,13 @@ export class RuleEngine {
   }
 
   /**
+   * Get all registered policies (agents)
+   */
+  getAllPolicies(): AgentPolicy[] {
+    return Array.from(this.policies.values());
+  }
+
+  /**
    * Check if an intent passes all rules
    */
   check(intent: Intent): RuleCheckResult {
