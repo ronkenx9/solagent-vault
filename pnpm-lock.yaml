@@ -145,7 +145,7 @@ importers:
   packages/vault-api:
     dependencies:
       '@solagent/vault-core':
-        specifier: workspace:*
+        specifier: file:../vault-core
         version: link:../vault-core
       cors:
         specifier: ^2.8.5
