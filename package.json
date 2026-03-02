@@ -14,7 +14,8 @@
     "vault-api": "pnpm --filter @solagent/vault-api dev",
     "orchestrator": "pnpm --filter @solagent/orchestrator dev",
     "dashboard": "pnpm --filter @solagent/dashboard dev",
-    "generate-seed": "pnpm --filter @solagent/shared generate-seed"
+    "generate-seed": "pnpm --filter @solagent/shared generate-seed",
+    "postinstall": "pnpm build"
   },
   "devDependencies": {
     "tsx": "^4.21.0",
