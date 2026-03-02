@@ -10,7 +10,7 @@ import cors from 'cors';
 import { Vault, LocalKeyManager, TurnkeyKeyManager } from '@solagent/vault-core';
 import type { Intent, IntentAction } from '@solagent/vault-core';
 import { createAuthMiddleware } from './middleware/auth.js';
-import rateLimit from 'express-rate-limit';
+import { rateLimit } from 'express-rate-limit';
 
 const app: Application = express();
 app.use(cors());
