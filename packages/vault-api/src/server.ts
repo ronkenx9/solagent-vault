@@ -7,7 +7,7 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
 }
 import express, { type Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { Vault, LocalKeyManager, TurnkeyKeyManager } from '@solagent/vault-core';
+import { Vault, LocalKeyManager } from '@solagent/vault-core';
 import type { Intent, IntentAction } from '@solagent/vault-core';
 import { createAuthMiddleware } from './middleware/auth.js';
 import { rateLimit } from 'express-rate-limit';
@@ -41,9 +41,10 @@ console.log('[VaultAPI] Module loading check...');
 // --- Vault instance ---
 let vault: any;
 try {
-    const useTurnkey = process.env.USE_TURNKEY === 'true';
-    const keyManager = useTurnkey ? new TurnkeyKeyManager() : new LocalKeyManager();
-    console.log(`[VaultAPI] Instantiated Vault with ${useTurnkey ? 'TurnkeyKeyManager' : 'LocalKeyManager'}`);
+    const keyManager = new LocalKeyManager();
+    // Vercel serverless edge crash hotfix: Turnkey MPC dependencies fail in Edge 
+    // environments without dedicated polyfills. Reverted API to LocalKeyManager.
+    console.log(`[VaultAPI] Instantiated Vault with LocalKeyManager`);
 
     vault = new Vault({
         rpcUrl: process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
