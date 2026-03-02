@@ -111,8 +111,8 @@ Open [http://localhost:3001](http://localhost:3001) to see the live RPG dashboar
 ### 1. The KeyManager Abstraction (Safe Key Management)
 A fundamental requirement for agentic wallets is that the AI **never** holds the private key. In SolAgent Vault, all key operations are abstracted behind a `KeyManager` interface. 
 - The `agent-brain` (which runs the LLM and processes market context) only knows its `agentId`.
-- The `vault-core` binds this `agentId` to a specific Keypair derived via BIP-44 HD derivation (`m/44'/501'/{agentIndex}'/0'`).
-- In production, the `LocalKeyManager` can be seamlessly swapped for the `TurnkeyKeyManager` (scaffolded in the repo) to utilize secure MPC enclaves.
+- The `vault-core` binds this `agentId` to a specific Keypair.
+- **Enterprise MPC**: Setting `USE_TURNKEY=true` dynamically swaps the standard local keys for the `TurnkeyKeyManager`. The Vault constructs *unsigned* Solana transactions and broadcasts them to Turnkey's secure Multi-Party Computation enclaves. The private keys physically never touch the node server environment.
 
 ### 2. Strict LLM Schema Enforcement
 Fragile JSON parsing is the enemy of autonomous agents. The `agent-brain` utilizes the **Vercel AI SDK** and **Zod Object Schemas** to enforce that the LLM (llama-3.3-70b-versatile via Groq) strictly outputs valid commands. 
@@ -126,6 +126,13 @@ The architecture enforces a strict one-way flow of intent:
 
 ### 4. Simulate-Before-Sign Security
 Before the `KeyManager` ever touches a transaction, the `Signer` executes a `simulateTransaction` call against the Devnet RPC. If the simulated transaction throws an error (e.g. insufficient funds, slippage exceeded, invalid instruction), the payload is dropped explicitly. This prevents the agent from broadcasting reverting transactions and wasting gas.
+
+### 5. Multi-Key Sandbox Isolation (Supabase)
+Instead of relying on a single master API key and volatile in-memory maps for policies, the Vault implements a resilient Postgres Database layer via Supabase. Every agent is isolated behind its own unique `api_key`. The `vault-api` actively queries the database via `authMiddleware` on every trade intent, guaranteeing a leaked API key cannot compromise the entire system.
+
+### 6. Endpoint & Orchestrator Safety
+- **Network Shielding:** The API endpoints are defended by `express-rate-limit`. The sensitive transaction mutation endpoint `POST /vault/execute` enforces a hard limit of 5 requests per second to prevent RPC flooding.
+- **Race Condition Prevention:** The Agent Brain operates on a rigid asynchronous `isProcessing` lock. During times of severe Solana network congestion, the orchestrator stubbornly waits for the previous transaction to finish broadcasting and confirming on the blockchain before the LLM is permitted to generate a new intent.
 
 ---
 
