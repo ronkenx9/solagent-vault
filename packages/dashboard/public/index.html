@@ -798,13 +798,13 @@
         // POLICY CONTROL LOGIC (LEVEL UP/DOWN)
         // ═══════════════════════════════════════════
 
+        let sessionApiKey = null;
+
         function getApiKey() {
-            let key = localStorage.getItem('vaultApiKey');
-            if (!key) {
-                key = prompt("Enter Vault API Key to authorize this action:");
-                if (key) localStorage.setItem('vaultApiKey', key);
+            if (!sessionApiKey) {
+                sessionApiKey = prompt("Enter Vault API Key to authorize this action:");
             }
-            return key;
+            return sessionApiKey;
         }
 
         async function levelUp(agentId) {
