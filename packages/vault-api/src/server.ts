@@ -7,13 +7,29 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
 }
 import express, { type Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { Vault, LocalKeyManager } from '@solagent/vault-core';
+import { Vault, LocalKeyManager, TurnkeyKeyManager } from '@solagent/vault-core';
 import type { Intent, IntentAction } from '@solagent/vault-core';
 import { createAuthMiddleware } from './middleware/auth.js';
+import rateLimit from 'express-rate-limit';
 
 const app: Application = express();
 app.use(cors());
 app.use(express.json());
+
+// Global Rate Limiter: Protects all endpoints from general scraping/abuse (100 req per 15 mins)
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: { error: 'TOO_MANY_REQUESTS', message: 'Global rate limit exceeded.' }
+});
+app.use(globalLimiter);
+
+// Strict Execution Rate Limiter: Protects sensitive mutation endpoints from brute force (5 rps)
+const executeLimiter = rateLimit({
+    windowMs: 1000, // 1 second
+    max: 5,
+    message: { error: 'TOO_MANY_REQUESTS', message: 'RPC execution limit exceeded. Max 5 RPS.' }
+});
 
 // Note: Static files for the dashboard are handled by vercel.json routes in production.
 if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
@@ -25,7 +41,10 @@ console.log('[VaultAPI] Module loading check...');
 // --- Vault instance ---
 let vault: any;
 try {
-    const keyManager = new LocalKeyManager();
+    const useTurnkey = process.env.USE_TURNKEY === 'true';
+    const keyManager = useTurnkey ? new TurnkeyKeyManager() : new LocalKeyManager();
+    console.log(`[VaultAPI] Instantiated Vault with ${useTurnkey ? 'TurnkeyKeyManager' : 'LocalKeyManager'}`);
+
     vault = new Vault({
         rpcUrl: process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
         keyManager,
@@ -78,7 +97,7 @@ app.post('/vault/broadcast', (req: Request, res: Response) => {
 /**
  * POST /vault/execute — Execute a transaction intent
  */
-app.post('/vault/execute', authMiddleware, async (req: Request, res: Response) => {
+app.post('/vault/execute', executeLimiter, authMiddleware, async (req: Request, res: Response) => {
     const { agent_id, action, input_mint, output_mint, amount_lamports, destination, reasoning } = req.body;
 
     // Validate required fields

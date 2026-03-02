@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { Vault, type VaultConfig, LocalKeyManager } from '@solagent/vault-core';
+import { Vault, type VaultConfig, LocalKeyManager, TurnkeyKeyManager } from '@solagent/vault-core';
 import { AgentBrain, DEFAULT_STRATEGIES, type LLMConfig, type AgentConfig, type AgentStrategy } from '@solagent/agent-brain';
 import type { OrchestratorConfig, OrchestratorAgentConfig, OrchestratorState, OrchestratorAgentState, OrchestratorEvent } from './types.js';
 
@@ -21,7 +21,10 @@ export class Orchestrator extends EventEmitter {
 
     this.llmConfig = config.llmConfig;
 
-    const keyManager = new LocalKeyManager();
+    const useTurnkey = process.env.USE_TURNKEY === 'true';
+    const keyManager = useTurnkey ? new TurnkeyKeyManager() : new LocalKeyManager();
+    console.log(`[Orchestrator] Core Engine engaged with: ${useTurnkey ? 'TurnkeyKeyManager' : 'LocalKeyManager'}`);
+
     this.vault = new Vault({
       rpcUrl: (config as any).rpcUrl || DEFAULT_RPC_URL,
       keyManager,
