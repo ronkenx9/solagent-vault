@@ -9,7 +9,7 @@ import express, { type Application, Request, Response, NextFunction } from 'expr
 import cors from 'cors';
 import { Vault, LocalKeyManager } from '@solagent/vault-core';
 import type { Intent, IntentAction } from '@solagent/vault-core';
-import { authMiddleware } from './middleware/auth.js';
+import { createAuthMiddleware } from './middleware/auth.js';
 
 const app: Application = express();
 app.use(cors());
@@ -33,6 +33,8 @@ try {
 } catch (err) {
     console.error('[VaultAPI] Failed to initialize Vault:', err);
 }
+
+const authMiddleware = createAuthMiddleware(vault);
 
 // Replaced pre-registration block with Database seeding
 if (process.env.VERCEL) {

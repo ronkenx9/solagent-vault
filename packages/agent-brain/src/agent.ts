@@ -40,6 +40,8 @@ export class AgentBrain extends EventEmitter {
     return this.config.strategy;
   }
 
+  private isProcessing: boolean = false;
+
   /**
    * Run the agent decision loop
    */
@@ -52,12 +54,28 @@ export class AgentBrain extends EventEmitter {
     this.running = true;
     console.log(`[AgentBrain:${this.config.id}] Starting decision loop (interval: ${intervalSeconds}s)`);
 
-    // Run immediately, then on interval
-    await this.tick();
+    const loop = async () => {
+      if (!this.running) return;
 
-    this.intervalId = setInterval(async () => {
-      await this.tick();
-    }, intervalSeconds * 1000);
+      if (this.isProcessing) {
+        console.warn(`[AgentBrain:${this.config.id}] ⚠️ Previous tick still processing, skipping this cycle prevents race conditions.`);
+      } else {
+        this.isProcessing = true;
+        try {
+          await this.tick();
+        } catch (err) {
+          console.error(`[AgentBrain:${this.config.id}] Critical tick failure:`, err);
+        } finally {
+          this.isProcessing = false;
+        }
+      }
+
+      // Schedule next tick only after this logic completes
+      this.intervalId = setTimeout(loop, intervalSeconds * 1000);
+    };
+
+    // Kick off loop immediately
+    loop();
   }
 
   /**
@@ -65,7 +83,7 @@ export class AgentBrain extends EventEmitter {
    */
   stop(): void {
     if (this.intervalId) {
-      clearInterval(this.intervalId);
+      clearTimeout(this.intervalId);
       this.intervalId = undefined;
     }
     this.running = false;

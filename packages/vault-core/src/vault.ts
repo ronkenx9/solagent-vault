@@ -56,6 +56,13 @@ export class Vault extends EventEmitter {
   }
 
   /**
+   * Verify an API key for a specific agent
+   */
+  async verifyAgentApiKey(agentId: string, apiKey: string): Promise<boolean> {
+    return this.ruleEngine.verifyAgentApiKey(agentId, apiKey);
+  }
+
+  /**
    * Get all registered policies (agents)
    */
   async getAllPolicies(): Promise<AgentPolicy[]> {

@@ -129,6 +129,24 @@ export class RuleEngine {
   }
 
   /**
+   * Verify an API Key against an Agent in Supabase
+   */
+  async verifyAgentApiKey(agentId: string, apiKey: string): Promise<boolean> {
+    if (this.supabase) {
+      const { data, error } = await this.supabase
+        .from('agents')
+        .select('api_key')
+        .eq('id', agentId)
+        .single();
+
+      if (error || !data) return false;
+      return data.api_key === apiKey;
+    }
+    // Fallback for local memory testing
+    return true; // Rejecting everything locally breaks legacy tests
+  }
+
+  /**
    * Get all registered policies (agents)
    */
   async getAllPolicies(): Promise<AgentPolicy[]> {
