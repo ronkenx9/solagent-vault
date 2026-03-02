@@ -1,0 +1,13 @@
+# Vercel specific ignore file
+# Overrides .gitignore to ensure `dist/` directories compiled during post-install 
+# are correctly packaged into the final Serverless Edge lambda payloads by nft.
+
+.pnpm-store/
+.env
+.env.*
+*.log
+.vscode/
+.idea/
+.DS_Store
+coverage/
+*.tmp
