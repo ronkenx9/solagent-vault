@@ -1,0 +1,46 @@
+services:
+  # 1. Vault API (Web Service)
+  - type: web
+    name: solagent-vault-api
+    env: node
+    buildCommand: pnpm install && pnpm build
+    startCommand: cd packages/vault-api && pnpm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20.x
+      # Add all your secrets here securely via the Render Dashboard
+      - key: SOLANA_RPC_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: TURNKEY_API_PUBLIC_KEY
+        sync: false
+      - key: TURNKEY_API_PRIVATE_KEY
+        sync: false
+      - key: TURNKEY_ORGANIZATION_ID
+        sync: false
+
+  # 2. AI Orchestrator (Background Worker)
+  - type: worker
+    name: solagent-orchestrator
+    env: node
+    buildCommand: pnpm install && pnpm build
+    startCommand: cd packages/orchestrator && pnpm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20.x
+      # Worker shares the same secrets
+      - key: SOLANA_RPC_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: TURNKEY_API_PUBLIC_KEY
+        sync: false
+      - key: TURNKEY_API_PRIVATE_KEY
+        sync: false
+      - key: TURNKEY_ORGANIZATION_ID
+        sync: false
