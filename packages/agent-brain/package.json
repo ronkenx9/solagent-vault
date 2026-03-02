@@ -10,10 +10,13 @@
     "test": "vitest"
   },
   "dependencies": {
-    "@solagent/vault-core": "workspace:*",
+    "@ai-sdk/anthropic": "^3.0.50",
+    "@ai-sdk/openai": "^3.0.37",
     "@solagent/shared": "workspace:*",
-    "openai": "^4.28.0",
+    "@solagent/vault-core": "workspace:*",
+    "ai": "^6.0.105",
     "anthropic": "npm:@anthropic-ai/sdk@^0.36.0",
+    "openai": "^4.28.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {

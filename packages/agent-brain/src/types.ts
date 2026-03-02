@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export type LLMProvider = 'openai' | 'anthropic';
 
 export interface AgentStrategy {
@@ -27,21 +29,25 @@ export interface MarketContext {
   strategy: AgentStrategy;
 }
 
-export interface AgentDecision {
-  reasoning: string;           // Human-readable reasoning chain
-  reasoningSteps: ReasoningStep[]; // Structured step-by-step reasoning
-  action: 'SWAP' | 'HOLD' | 'TRANSFER';
-  inputMint?: string;
-  outputMint?: string;
-  amountLamports?: number;
-  confidence: number;          // 0-1
-}
+export const reasoningStepSchema = z.object({
+  timestamp: z.string(),
+  step: z.string(),
+  detail: z.string(),
+});
 
-export interface ReasoningStep {
-  timestamp: string;
-  step: string;
-  detail: string;
-}
+export type ReasoningStep = z.infer<typeof reasoningStepSchema>;
+
+export const agentDecisionSchema = z.object({
+  reasoning: z.string(),
+  reasoningSteps: z.array(reasoningStepSchema),
+  action: z.enum(['SWAP', 'HOLD', 'TRANSFER']),
+  inputMint: z.string().optional(),
+  outputMint: z.string().optional(),
+  amountLamports: z.number().optional().default(0),
+  confidence: z.number().min(0).max(1),
+});
+
+export type AgentDecision = z.infer<typeof agentDecisionSchema>;
 
 export interface SwapQuote {
   inputMint: string;

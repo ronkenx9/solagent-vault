@@ -13,6 +13,9 @@ export type {
 export { RuleEngine } from './rule-engine.js';
 export { Signer } from './signer.js';
 export { Vault, type VaultConfig } from './vault.js';
+export { type KeyManager } from './wallet/key-manager.js';
+export { LocalKeyManager } from './wallet/local-manager.js';
+export { TurnkeyKeyManager, type TurnkeyConfig } from './wallet/turnkey-manager.js';
 
 export {
   deriveAgentKeypair,

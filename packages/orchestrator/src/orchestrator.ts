@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { Vault, type VaultConfig } from '@solagent/vault-core';
+import { Vault, type VaultConfig, LocalKeyManager } from '@solagent/vault-core';
 import { AgentBrain, DEFAULT_STRATEGIES, type LLMConfig, type AgentConfig, type AgentStrategy } from '@solagent/agent-brain';
 import type { OrchestratorConfig, OrchestratorAgentConfig, OrchestratorState, OrchestratorAgentState, OrchestratorEvent } from './types.js';
 
@@ -21,8 +21,10 @@ export class Orchestrator extends EventEmitter {
 
     this.llmConfig = config.llmConfig;
 
+    const keyManager = new LocalKeyManager();
     this.vault = new Vault({
       rpcUrl: (config as any).rpcUrl || DEFAULT_RPC_URL,
+      keyManager,
     });
 
     this.config = {
@@ -217,14 +219,14 @@ export class Orchestrator extends EventEmitter {
   /**
    * Pause an agent
    */
-  pauseAgent(agentId: string): boolean {
+  async pauseAgent(agentId: string): Promise<boolean> {
     return this.vault.pauseAgent(agentId);
   }
 
   /**
    * Resume an agent
    */
-  resumeAgent(agentId: string): boolean {
+  async resumeAgent(agentId: string): Promise<boolean> {
     return this.vault.resumeAgent(agentId);
   }
 

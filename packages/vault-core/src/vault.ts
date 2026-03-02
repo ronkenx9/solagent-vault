@@ -2,10 +2,11 @@ import { EventEmitter } from 'events';
 import { RuleEngine } from './rule-engine.js';
 import { Signer, type SignerConfig } from './signer.js';
 import type { AgentPolicy, Intent, VaultResult, VaultEvent, WalletBalance } from './types.js';
-import { deriveAgentPublicKey } from './hd-wallet.js';
+import { KeyManager } from './wallet/key-manager.js';
 
 export interface VaultConfig {
   rpcUrl: string;
+  keyManager: KeyManager;
   confirmOptions?: SignerConfig['confirmOptions'];
 }
 
@@ -22,6 +23,7 @@ export class Vault extends EventEmitter {
     this.ruleEngine = new RuleEngine();
     this.signer = new Signer({
       rpcUrl: config.rpcUrl,
+      keyManager: config.keyManager,
       confirmOptions: config.confirmOptions,
     });
   }
@@ -29,18 +31,18 @@ export class Vault extends EventEmitter {
   /**
    * Register a new policy for an agent
    */
-  registerPolicy(policy: AgentPolicy): void {
-    this.ruleEngine.registerPolicy(policy);
+  async registerPolicy(policy: AgentPolicy): Promise<void> {
+    await this.ruleEngine.registerPolicy(policy);
     this.emitEvent('policy_updated', policy.agentId, { policy });
   }
 
   /**
    * Update an existing policy
    */
-  updatePolicy(agentId: string, updates: Partial<Omit<AgentPolicy, 'agentId'>>): boolean {
-    const result = this.ruleEngine.updatePolicy(agentId, updates);
+  async updatePolicy(agentId: string, updates: Partial<Omit<AgentPolicy, 'agentId'>>): Promise<boolean> {
+    const result = await this.ruleEngine.updatePolicy(agentId, updates);
     if (result) {
-      const policy = this.ruleEngine.getPolicy(agentId);
+      const policy = await this.ruleEngine.getPolicy(agentId);
       this.emitEvent('policy_updated', agentId, { policy });
     }
     return result;
@@ -49,14 +51,14 @@ export class Vault extends EventEmitter {
   /**
    * Get current policy for an agent
    */
-  getPolicy(agentId: string): AgentPolicy | undefined {
+  async getPolicy(agentId: string): Promise<AgentPolicy | undefined> {
     return this.ruleEngine.getPolicy(agentId);
   }
 
   /**
    * Get all registered policies (agents)
    */
-  getAllPolicies(): AgentPolicy[] {
+  async getAllPolicies(): Promise<AgentPolicy[]> {
     return this.ruleEngine.getAllPolicies();
   }
 
@@ -77,6 +79,7 @@ export class Vault extends EventEmitter {
         intent,
         reason,
       });
+      await this.ruleEngine.logTransaction(intent, 'BLOCKED', null, { approved: false, reason });
       return {
         success: false,
         signature: null,
@@ -86,13 +89,14 @@ export class Vault extends EventEmitter {
     }
 
     // 1. Check rules first — agent cannot bypass this
-    const check = this.ruleEngine.check(intent);
+    const check = await this.ruleEngine.check(intent);
 
     if (!check.approved) {
       this.emitEvent('tx_blocked', intent.agentId, {
         intent,
         reason: check.reason,
       });
+      await this.ruleEngine.logTransaction(intent, 'BLOCKED', null, check);
       return {
         success: false,
         signature: null,
@@ -134,6 +138,8 @@ export class Vault extends EventEmitter {
         timestamp: Date.now(),
       });
 
+      await this.ruleEngine.logTransaction(intent, 'EXECUTED', signature, check);
+
       return {
         success: true,
         signature,
@@ -142,6 +148,7 @@ export class Vault extends EventEmitter {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      await this.ruleEngine.logTransaction(intent, 'FAILED', null, { approved: true, reason: errorMessage });
       return {
         success: false,
         signature: null,
@@ -161,15 +168,16 @@ export class Vault extends EventEmitter {
   /**
    * Get wallet address for an agent (public key only, never private)
    */
-  getWalletAddress(agentId: string): string {
-    return deriveAgentPublicKey(agentId).toBase58();
+  async getWalletAddress(agentId: string): Promise<string> {
+    const pubkey = await this.signer.getWalletAddress(agentId);
+    return pubkey.toBase58();
   }
 
   /**
    * Emergency pause for an agent
    */
-  pauseAgent(agentId: string): boolean {
-    const result = this.ruleEngine.pauseAgent(agentId);
+  async pauseAgent(agentId: string): Promise<boolean> {
+    const result = await this.ruleEngine.pauseAgent(agentId);
     if (result) {
       this.emitEvent('agent_paused', agentId, { agentId });
     }
@@ -179,8 +187,8 @@ export class Vault extends EventEmitter {
   /**
    * Resume a paused agent
    */
-  resumeAgent(agentId: string): boolean {
-    const result = this.ruleEngine.resumeAgent(agentId);
+  async resumeAgent(agentId: string): Promise<boolean> {
+    const result = await this.ruleEngine.resumeAgent(agentId);
     if (result) {
       this.emitEvent('agent_resumed', agentId, { agentId });
     }
@@ -190,7 +198,7 @@ export class Vault extends EventEmitter {
   /**
    * Check if agent is paused
    */
-  isPaused(agentId: string): boolean {
+  async isPaused(agentId: string): Promise<boolean> {
     return this.ruleEngine.isPaused(agentId);
   }
 
@@ -204,7 +212,7 @@ export class Vault extends EventEmitter {
   /**
    * Get transaction count in last minute
    */
-  getTxCountLastMinute(agentId: string): number {
+  async getTxCountLastMinute(agentId: string): Promise<number> {
     return this.ruleEngine.getTxCountLastMinute(agentId);
   }
 

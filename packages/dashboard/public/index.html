@@ -798,9 +798,24 @@
         // POLICY CONTROL LOGIC (LEVEL UP/DOWN)
         // ═══════════════════════════════════════════
 
+        function getApiKey() {
+            let key = localStorage.getItem('vaultApiKey');
+            if (!key) {
+                key = prompt("Enter Vault API Key to authorize this action:");
+                if (key) localStorage.setItem('vaultApiKey', key);
+            }
+            return key;
+        }
+
         async function levelUp(agentId) {
             const data = AGENT_MAP[agentId];
             if (!data) return;
+
+            const apiKey = getApiKey();
+            if (!apiKey) {
+                addLog(data.key, data.cls, `⚠️ Action cancelled. API Key required.`, 'warning');
+                return;
+            }
 
             const currentLimit = state.limits[data.key] || 0.5;
             const nextLimit = currentLimit * 1.5;
@@ -813,7 +828,10 @@
             try {
                 const response = await fetch(`${API_BASE}/vault/policy`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
                     body: JSON.stringify({
                         agent_id: agentId,
                         max_lamports_per_tx: Math.floor(nextLimit * 1e9),
@@ -840,6 +858,12 @@
             const data = AGENT_MAP[agentId];
             if (!data) return;
 
+            const apiKey = getApiKey();
+            if (!apiKey) {
+                addLog(data.key, data.cls, `⚠️ Action cancelled. API Key required.`, 'warning');
+                return;
+            }
+
             const currentLimit = state.limits[data.key] || 0.5;
             const nextLimit = Math.max(0.01, currentLimit / 1.5);
 
@@ -851,7 +875,10 @@
             try {
                 const response = await fetch(`${API_BASE}/vault/policy`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
                     body: JSON.stringify({
                         agent_id: agentId,
                         max_lamports_per_tx: Math.floor(nextLimit * 1e9),

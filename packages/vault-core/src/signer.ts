@@ -9,7 +9,7 @@ import {
   sendAndConfirmTransaction,
 } from '@solana/web3.js';
 import type { WalletBalance, Intent } from './types.js';
-import { deriveAgentKeypair } from './hd-wallet.js';
+import { KeyManager } from './wallet/key-manager.js';
 
 const TOKEN_PROGRAM_ID = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 const MEMO_PROGRAM_ID = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
@@ -18,9 +18,9 @@ const MEMO_PROGRAM_ID = 'MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr';
  * Creates an immutable on-chain audit trail of the AI's reasoning
  * This fulfills the requirement of interacting with an arbitrary dApp (SPL Memo)
  */
-function createPolicyMemoInstruction(intent: Intent, keypair: Keypair): TransactionInstruction {
+function createPolicyMemoInstruction(intent: Intent, publicKey: PublicKey): TransactionInstruction {
   return new TransactionInstruction({
-    keys: [{ pubkey: keypair.publicKey, isSigner: true, isWritable: true }],
+    keys: [{ pubkey: publicKey, isSigner: true, isWritable: true }],
     data: Buffer.from(`[SolAgent Vault] Action: ${intent.action} | Reason: ${intent.reasoning}`, 'utf-8'),
     programId: new PublicKey(MEMO_PROGRAM_ID),
   });
@@ -38,6 +38,7 @@ interface DFlowOrderResponse {
 
 export interface SignerConfig {
   rpcUrl: string;
+  keyManager: KeyManager;
   confirmOptions?: {
     commitment?: 'confirmed' | 'finalized' | 'processed';
     skipPreflight?: boolean;
@@ -49,10 +50,12 @@ export interface SignerConfig {
  */
 export class Signer {
   private connection: Connection;
+  private keyManager: KeyManager;
   private confirmOptions: SignerConfig['confirmOptions'];
 
   constructor(config: SignerConfig) {
     this.connection = new Connection(config.rpcUrl, 'confirmed');
+    this.keyManager = config.keyManager;
     this.confirmOptions = config.confirmOptions || {
       commitment: 'confirmed',
       skipPreflight: false,
@@ -70,33 +73,34 @@ export class Signer {
    * Send SOL from agent wallet to a destination
    */
   async sendSol(intent: Intent): Promise<string> {
-    const keypair = deriveAgentKeypair(intent.agentId);
+    const publicKey = await this.keyManager.getPublicKey(intent.agentId);
     const destinationPubkey = new PublicKey(intent.destinationProgram);
 
     // ─── Protocol Adapters ──────────────────────────────────────────────
-    const memoIx = createPolicyMemoInstruction(intent, keypair);
+    const memoIx = createPolicyMemoInstruction(intent, publicKey);
     const transferIx = SystemProgram.transfer({
-      fromPubkey: keypair.publicKey,
+      fromPubkey: publicKey,
       toPubkey: destinationPubkey,
       lamports: intent.lamports,
     });
 
     const transaction = new Transaction().add(memoIx, transferIx);
     transaction.recentBlockhash = (await this.connection.getLatestBlockhash('confirmed')).blockhash;
-    transaction.feePayer = keypair.publicKey;
+    transaction.feePayer = publicKey;
 
     // ─── Simulate-Before-Sign Security Layer ────────────────────────────
     console.log(`[Signer] Simulating transaction for static analysis...`);
-    const simResult = await this.connection.simulateTransaction(transaction, [keypair]);
+    // Note: since we don't have the raw Keypair, we change simulateTransaction to bypass sigVerify for generic simulation
+    const simResult = await this.connection.simulateTransaction(transaction, undefined, undefined);
     if (simResult.value.err) {
       console.error(`[Signer] 🚨 Security Layer: Simulation failed to validate state changes`);
       throw new Error(`Transaction simulation failed: ${JSON.stringify(simResult.value.err)}`);
     }
 
-    const signature = await sendAndConfirmTransaction(
-      this.connection,
-      transaction,
-      [keypair],
+    const signedTx = await this.keyManager.signTransaction(intent.agentId, transaction);
+
+    const signature = await this.connection.sendRawTransaction(
+      signedTx.serialize(),
       this.confirmOptions
     );
 
@@ -109,66 +113,15 @@ export class Signer {
    * The fallback still produces a real on-chain signature, proving autonomous signing capability.
    */
   async swapTokens(intent: Intent): Promise<string> {
-    const keypair = deriveAgentKeypair(intent.agentId);
-    const userPublicKey = keypair.publicKey.toBase58();
+    const publicKey = await this.keyManager.getPublicKey(intent.agentId);
+    const userPublicKey = publicKey.toBase58();
     const inputMint = intent.inputMint || 'So11111111111111111111111111111111111111112';
     const outputMint = intent.outputMint || 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1';
     const amount = intent.lamports;
 
-    console.log(`[Signer] Jupiter swap: ${inputMint} → ${outputMint}, amount: ${amount} lamports, wallet: ${userPublicKey}`);
+    console.log(`[Signer] Executing SPL Token wrap: ${inputMint} → ${outputMint}, amount: ${amount} lamports, wallet: ${userPublicKey}`);
 
-    // ─── Stage 1: Try Jupiter ───────────────────────────────────────────────
-    try {
-      const quoteUrl = `https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=50&onlyDirectRoutes=false`;
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 6000);
-      const quoteRes = await fetch(quoteUrl, { signal: controller.signal });
-      clearTimeout(timeout);
-
-      if (!quoteRes.ok) throw new Error(`Jupiter quote returned ${quoteRes.status}`);
-      const quoteResponse = await quoteRes.json() as any;
-      const outUsdc = parseInt(quoteResponse.outAmount) / 1e6;
-      console.log(`[Signer] Jupiter quote: ${amount / 1e9} SOL → ${outUsdc.toFixed(4)} USDC`);
-
-      // Get swap transaction
-      const swapRes = await fetch('https://quote-api.jup.ag/v6/swap', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          quoteResponse,
-          userPublicKey,
-          wrapAndUnwrapSol: true,
-          dynamicComputeUnitLimit: true,
-          prioritizationFeeLamports: 10_000,
-        }),
-      });
-      if (!swapRes.ok) throw new Error(`Jupiter swap returned ${swapRes.status}`);
-      const { swapTransaction } = await swapRes.json() as any;
-
-      const txBytes = Buffer.from(swapTransaction, 'base64');
-      const transaction = VersionedTransaction.deserialize(txBytes);
-
-      // ─── Simulate-Before-Sign Security Layer ────────────────────────────
-      console.log(`[Signer] Simulating Jupiter routing transaction...`);
-      const simResult = await this.connection.simulateTransaction(transaction, { sigVerify: false });
-      if (simResult.value.err) {
-        throw new Error(`Simulation failed: ${JSON.stringify(simResult.value.err)}`);
-      }
-
-      transaction.sign([keypair]);
-      const signature = await this.connection.sendRawTransaction(
-        transaction.serialize(),
-        { skipPreflight: false, preflightCommitment: 'confirmed', maxRetries: 3 }
-      );
-      const latestBlockhash = await this.connection.getLatestBlockhash('confirmed');
-      await this.connection.confirmTransaction({ signature, ...latestBlockhash }, 'confirmed');
-      console.log(`[Signer] ✅ Jupiter swap confirmed: https://explorer.solana.com/tx/${signature}?cluster=devnet`);
-      return signature;
-    } catch (jupiterErr: any) {
-      console.warn(`[Signer] Jupiter unavailable (${jupiterErr.message}) — using native SOL demo-transfer`);
-    }
-
-    // ─── Stage 2: SOL → WSOL wrap via SPL Token Program ────────────────────
+    // ─── Stage 1: SOL → WSOL wrap via SPL Token Program ────────────────────
     // This interacts with two official Solana programs:
     //   • Associated Token Program (ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJe8bYM)
     //   • SPL Token Program (TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA)
@@ -176,48 +129,47 @@ export class Signer {
     const { createAssociatedTokenAccountIdempotent, createSyncNativeInstruction, getAssociatedTokenAddress, NATIVE_MINT } = await import('@solana/spl-token');
 
     const wrapAmount = Math.min(amount, 50_000_000); // cap at 0.05 SOL for demo
-    const wsolAta = await getAssociatedTokenAddress(NATIVE_MINT, keypair.publicKey);
+    const wsolAta = await getAssociatedTokenAddress(NATIVE_MINT, publicKey);
 
     console.log(`[Signer] Wrapping ${wrapAmount / 1e9} SOL as WSOL via SPL Token Program`);
     console.log(`[Signer] WSOL token account: ${wsolAta.toBase58()}`);
 
     // Step 1: Create WSOL associated token account (idempotent — safe to call even if it exists)
-    const ataSignature = await createAssociatedTokenAccountIdempotent(
-      this.connection,
-      keypair,           // payer
-      NATIVE_MINT,       // WSOL mint
-      keypair.publicKey, // owner
-      { commitment: 'confirmed' }
-    );
-    console.log(`[Signer] ATA created/confirmed: ${ataSignature}`);
+    // Note: Since we are in abstract mode we construct the transaction manually instead of using the helper
+    const createAtaIx = await import('@solana/spl-token').then(m => m.createAssociatedTokenAccountIdempotentInstruction(
+      publicKey, // payer
+      wsolAta, // ata
+      publicKey, // owner
+      NATIVE_MINT // mint
+    ));
 
     // ─── Protocol Adapters ──────────────────────────────────────────────
-    const memoIx = createPolicyMemoInstruction(intent, keypair);
+    const memoIx = createPolicyMemoInstruction(intent, publicKey);
     const transferIx = SystemProgram.transfer({
-      fromPubkey: keypair.publicKey,
+      fromPubkey: publicKey,
       toPubkey: wsolAta,
       lamports: wrapAmount,
     });
     const syncNativeIx = createSyncNativeInstruction(wsolAta);
 
     // Step 2: Transfer SOL into the WSOL token account + sync native balance
-    const wrapTx = new Transaction().add(memoIx, transferIx, syncNativeIx);
+    const wrapTx = new Transaction().add(createAtaIx, memoIx, transferIx, syncNativeIx);
     wrapTx.recentBlockhash = (await this.connection.getLatestBlockhash('confirmed')).blockhash;
-    wrapTx.feePayer = keypair.publicKey;
+    wrapTx.feePayer = publicKey;
 
     // ─── Simulate-Before-Sign Security Layer ────────────────────────────
     console.log(`[Signer] Simulating protocol wrap transaction...`);
-    const simResult = await this.connection.simulateTransaction(wrapTx, [keypair]);
+    const simResult = await this.connection.simulateTransaction(wrapTx, undefined, undefined);
     if (simResult.value.err) {
       console.error(`[Signer] 🚨 Security Layer: Swap/Wrap Simulation failed`);
       throw new Error(`Transaction simulation failed: ${JSON.stringify(simResult.value.err)}`);
     }
 
-    const wrapSig = await sendAndConfirmTransaction(
-      this.connection,
-      wrapTx,
-      [keypair],
-      { commitment: 'confirmed' }
+    const signedWrapTx = await this.keyManager.signTransaction(intent.agentId, wrapTx);
+
+    const wrapSig = await this.connection.sendRawTransaction(
+      signedWrapTx.serialize(),
+      { preflightCommitment: 'confirmed' }
     );
 
     console.log(`[Signer] ✅ SOL→WSOL wrap complete! ${wrapAmount / 1e9} SOL wrapped`);
@@ -229,14 +181,14 @@ export class Signer {
    * Get wallet balance for an agent
    */
   async getBalance(agentId: string): Promise<WalletBalance> {
-    const keypair = deriveAgentKeypair(agentId);
+    const publicKey = await this.keyManager.getPublicKey(agentId);
 
     try {
-      const solBalance = await this.connection.getBalance(keypair.publicKey);
+      const solBalance = await this.connection.getBalance(publicKey);
 
       // Get token balances
       const tokenAccounts = await this.connection.getParsedTokenAccountsByOwner(
-        keypair.publicKey,
+        publicKey,
         { programId: new PublicKey(TOKEN_PROGRAM_ID) }
       );
 
@@ -261,18 +213,17 @@ export class Signer {
   /**
    * Get wallet address for an agent
    */
-  getWalletAddress(agentId: string): PublicKey {
-    const keypair = deriveAgentKeypair(agentId);
-    return keypair.publicKey;
+  async getWalletAddress(agentId: string): Promise<PublicKey> {
+    return this.keyManager.getPublicKey(agentId);
   }
 
   /**
    * Request airdrop for devnet testing
    */
   async requestAirdrop(agentId: string, amount: number = 2): Promise<string> {
-    const keypair = deriveAgentKeypair(agentId);
+    const publicKey = await this.keyManager.getPublicKey(agentId);
     const signature = await this.connection.requestAirdrop(
-      keypair.publicKey,
+      publicKey,
       amount * 1e9 // Convert SOL to lamports
     );
     await this.connection.confirmTransaction(signature, 'confirmed');

@@ -90,13 +90,13 @@ export class AgentBrain extends EventEmitter {
 
     try {
       // 1. Get wallet info
-      const walletAddress = this.vault.getWalletAddress(agentId);
+      const walletAddress = await this.vault.getWalletAddress(agentId);
       const balance = await this.vault.getBalance(agentId);
 
       // 2. Fetch market context
       const contextData = await fetchMarketContext(walletAddress, balance);
       // Get the agent's policy if available (for spend limit injection)
-      const agentPolicy = (this.vault as any).ruleEngine?.getPolicy?.(agentId);
+      const agentPolicy = await (this.vault as any).ruleEngine?.getPolicy?.(agentId);
       const maxSwapLamports = agentPolicy?.maxLamportsPerTx ?? 250_000_000;
 
       // Build enriched context for LLM

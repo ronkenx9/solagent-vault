@@ -106,86 +106,54 @@ Open [http://localhost:3001](http://localhost:3001) to see the live RPG dashboar
 
 ---
 
-## Architecture
+## 🧠 Deep Dive: Agentic Wallet Architecture
 
-### Packages
+### 1. The KeyManager Abstraction (Safe Key Management)
+A fundamental requirement for agentic wallets is that the AI **never** holds the private key. In SolAgent Vault, all key operations are abstracted behind a `KeyManager` interface. 
+- The `agent-brain` (which runs the LLM and processes market context) only knows its `agentId`.
+- The `vault-core` binds this `agentId` to a specific Keypair derived via BIP-44 HD derivation (`m/44'/501'/{agentIndex}'/0'`).
+- In production, the `LocalKeyManager` can be seamlessly swapped for the `TurnkeyKeyManager` (scaffolded in the repo) to utilize secure MPC enclaves.
 
-| Package | Description |
-|---|---|
-| `vault-core` | HD wallet derivation, policy engine, signer, on-chain balance |
-| `agent-brain` | LLM client, market context, decision loop per agent |
-| `orchestrator` | Multi-agent coordinator, SSE event broadcasting |
-| `vault-api` | REST API + SSE server, serves the dashboard |
-| `dashboard` | RPG-themed web dashboard (static HTML/CSS/JS) |
+### 2. Strict LLM Schema Enforcement
+Fragile JSON parsing is the enemy of autonomous agents. The `agent-brain` utilizes the **Vercel AI SDK** and **Zod Object Schemas** to enforce that the LLM (llama-3.3-70b-versatile via Groq) strictly outputs valid commands. 
+If the LLM hallucinates an action or malforms the payload, the SDK automatically rejects and retries the generation. This guarantees the `Vault` only receives deterministic `SWAP`, `TRANSFER`, or `HOLD` commands.
 
-### Wallet Security
-- One **master seed phrase** stored in `.env` (never committed to git)
-- Each agent derives a **unique keypair** from the master seed using BIP-44 HD derivation: `m/44'/501'/{agentIndex}'/0'`
-- **Private keys never leave vault-core** — agents submit intent objects, not signed transactions
-- The policy engine acts as a **trust boundary**: LLM decisions cannot bypass spending caps or program whitelists
+### 3. Clear Separation of Responsibilities
+The architecture enforces a strict one-way flow of intent:
+1. **Agent Brain (Untrusted):** Evaluates pricing, reads market moving averages, and emits a JSON trading intent.
+2. **Vault API (Transport):** Authenticates the request via Bearer Tokens and passes it to the Core.
+3. **Vault Core (Trusted):** Validates the intent against hardcoded policies (e.g. `maxLamportsPerTx`), constructs the specific Solana transaction, simulates it, and signs it via the `KeyManager`.
 
-### 🛠️ Policy Engine & Governance
-Each agent has an on-chain policy registered at startup, which can be dynamically managed from the dashboard:
-- **Interactive Control**: Use the **Level Up** and **Level Down** buttons on the dashboard to scale risk.
-- **Spending Caps**: Vault Core enforces `maxLamportsPerTx`.
-- **Program Whitelisting**: Only approved protocols (e.g. Jupiter) are signable.
-- **Emergency Stop**: Pause any agent instantly via the policy engine.
+### 4. Simulate-Before-Sign Security
+Before the `KeyManager` ever touches a transaction, the `Signer` executes a `simulateTransaction` call against the Devnet RPC. If the simulated transaction throws an error (e.g. insufficient funds, slippage exceeded, invalid instruction), the payload is dropped explicitly. This prevents the agent from broadcasting reverting transactions and wasting gas.
 
 ---
 
-## Agent Profiles
+## API Reference & Skill Integration
 
-| **SAGE** | Alchemist | Portfolio Rebalancer | 0.5 SOL | 45% |
+Are you an AI Agent looking to integrate with this Vault? Read the [SKILLS.md](./SKILLS.md) file at the root of the repository.
 
----
-
-## 🏆 Proof of Autonomy
-
-This prototype has successfully demonstrated fully autonomous decision-making and on-chain signing.
-
-**Verified Autonomous Transaction (Devnet):**
-- **Agent**: SAGE (agent-rebalancer-03)
-- **Signal**: BEARISH (-2.26% 24h drop detected)
-- **Decision**: SWAP intent (Confidence: 0.52)
-- **Policy**: ✅ Approved ("All rules passed")
-- **Protocol**: SOL → WSOL wrap (via SPL Token Program fallback)
-- **Signature**: `23rtXq2GEsYWiXTozxfiFRBH6w67HLQqbXsxAhT3qMP9e3gWxdhB8UwwFnQGSJDfJBVmXejFYyVGM1UA7hYiDWmg`
-- **Explorer**: [View on Solana Explorer](https://explorer.solana.com/tx/23rtXq2GEsYWiXTozxfiFRBH6w67HLQqbXsxAhT3qMP9e3gWxdhB8UwwFnQGSJDfJBVmXejFYyVGM1UA7hYiDWmg?cluster=devnet)
-
----
-
-## API Reference
-
-See [SKILLS.md](./SKILLS.md) for full agent-readable API documentation.
-
-### Key Endpoints
+### Manual API Endpoints
 
 ```
 GET  http://localhost:3001/vault/health        — Health check
 GET  http://localhost:3001/vault/balance/:id   — Agent SOL balance
 GET  http://localhost:3001/vault/wallet/:id    — Agent public key
-GET  http://localhost:3001/vault/events        — SSE stream
+GET  http://localhost:3001/vault/events        — SSE stream (Dashboard)
 POST http://localhost:3001/vault/airdrop/:id   — Devnet airdrop
-POST http://localhost:3001/vault/pause/:id     — Emergency pause
+POST http://localhost:3001/vault/execute       — Submit Agent Intent
 ```
 
 ---
 
-## Deep Dive
+## 🏆 Bounty Requirements Checklist
 
-### How Agentic Wallets Work
-
-1. **HD Derivation** — The master seed generates deterministic agent wallets. Each agent ID is hashed to a BIP-44 derivation index, producing an isolated keypair.
-2. **Policy Registration** — Before starting, each agent's spending policy is registered with the vault (max lamports, allowed programs, tx rate).
-3. **LLM Tick Loop** — Every 120 seconds, each agent: fetches its balance, retrieves market data (SOL price, Jupiter swap quote), calls Groq LLM with full context, and receives a `{ action, confidence, reasoning }` decision.
-4. **Intent Execution** — If action=SWAP and confidence is above threshold, an intent is submitted to vault-core. The vault validates against policy, then signs and broadcasts the transaction.
-5. **Real-time Streaming** — Every event (tick, reasoning, decision, tx_result) is streamed via SSE to the dashboard.
-
-### Security Considerations
-- **Key isolation**: agents never handle raw private keys
-- **Sandboxed devnet**: no real funds at risk
-- **Emergency pause**: any agent can be halted via API without restarting
-- **Program whitelisting**: agents cannot interact with arbitrary smart contracts
+- [x] **Create a wallet programmatically:** Yes, `KeyManager` derives wallets on the fly via HD paths.
+- [x] **Sign transactions automatically:** Yes, the `Orchestrator` runs continuously without human input.
+- [x] **Hold SOL or SPL tokens:** Yes, wallets natively own their SOL and ATAs.
+- [x] **Interact with a test dApp/protocol:** Yes, SWAP intents wrap SOL to WSOL via the official SPL Token Program on Devnet.
+- [x] **Deep dive explaining wallet design:** Yes, see the Architecture section above.
+- [x] **SKILLS.md for agents to read:** Yes, included in the root directory.
 
 ---
 

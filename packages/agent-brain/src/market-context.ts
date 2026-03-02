@@ -155,8 +155,9 @@ async function fetchSolPrice(): Promise<{
 }
 
 /**
- * Fetch Jupiter quote for SOL -> USDC swap.
- * Returns mock data if Jupiter is unreachable (devnet limitation).
+ * Generates a mock Devnet quote for SOL -> Devnet USDC swap.
+ * Since Jupiter devnet RPCs are unstable, we calculate the deterministic math 
+ * directly here using the CoinGecko price feed to give the agent accurate context.
  */
 async function fetchJupiterQuote(
   inputMint: string,
@@ -165,44 +166,22 @@ async function fetchJupiterQuote(
 ): Promise<unknown | null> {
   if (amount <= 0) return null;
 
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
+  const solPrice = priceCache?.usd ?? 140;
+  const inSol = amount / 1e9;
+  const mockOutUsdc = inSol * solPrice * 0.997; // 0.3% slippage mock
 
-    const response = await fetch(
-      `https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amount}&slippageBps=50`,
-      { signal: controller.signal }
-    );
-    clearTimeout(timeout);
-
-    if (!response.ok) throw new Error(`Jupiter HTTP ${response.status}`);
-
-    const data = await response.json() as any;
-    if (data?.outAmount) {
-      const inSol = amount / 1e9;
-      const outUsdc = parseInt(data.outAmount) / 1e6;
-      console.log(`[MarketContext] Jupiter quote: ${inSol} SOL → ${outUsdc.toFixed(2)} USDC`);
-    }
-    return data;
-  } catch (error: any) {
-    console.warn('[MarketContext] Jupiter quote failed (devnet limitation):', error.message);
-    // Return a plausible mock so the LLM still gets route info
-    const solPrice = priceCache?.usd ?? 140;
-    const inSol = amount / 1e9;
-    const mockOutUsdc = inSol * solPrice * 0.997; // 0.3% slippage mock
-    return {
-      inputMint,
-      outputMint,
-      inAmount: String(amount),
-      outAmount: String(Math.floor(mockOutUsdc * 1e6)),
-      otherAmountThreshold: String(Math.floor(mockOutUsdc * 0.995 * 1e6)),
-      swapMode: 'ExactIn',
-      slippageBps: 50,
-      priceImpactPct: '0.05',
-      routePlan: [{ swapInfo: { label: 'Orca (mock devnet)' } }],
-      isDevnetMock: true,
-    };
-  }
+  return {
+    inputMint,
+    outputMint,
+    inAmount: String(amount),
+    outAmount: String(Math.floor(mockOutUsdc * 1e6)),
+    otherAmountThreshold: String(Math.floor(mockOutUsdc * 0.995 * 1e6)),
+    swapMode: 'ExactIn',
+    slippageBps: 50,
+    priceImpactPct: '0.05',
+    routePlan: [{ swapInfo: { label: 'SPL Token Wrapper (Devnet)' } }],
+    isDevnetMock: true,
+  };
 }
 
 function sleep(ms: number): Promise<void> {

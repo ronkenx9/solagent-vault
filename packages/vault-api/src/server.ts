@@ -7,8 +7,9 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
 }
 import express, { type Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { Vault } from '../../vault-core/src/index.js';
-import type { Intent, IntentAction } from '../../vault-core/src/types.js';
+import { Vault, LocalKeyManager } from '@solagent/vault-core';
+import type { Intent, IntentAction } from '@solagent/vault-core';
+import { authMiddleware } from './middleware/auth.js';
 
 const app: Application = express();
 app.use(cors());
@@ -24,11 +25,18 @@ console.log('[VaultAPI] Module loading check...');
 // --- Vault instance ---
 let vault: any;
 try {
+    const keyManager = new LocalKeyManager();
     vault = new Vault({
         rpcUrl: process.env.SOLANA_RPC_URL || 'https://api.devnet.solana.com',
+        keyManager,
     });
 } catch (err) {
     console.error('[VaultAPI] Failed to initialize Vault:', err);
+}
+
+// Replaced pre-registration block with Database seeding
+if (process.env.VERCEL) {
+    console.log('[VaultAPI] Running in Vercel mode. Database holds agent states.');
 }
 
 // --- SSE clients ---
@@ -68,7 +76,7 @@ app.post('/vault/broadcast', (req: Request, res: Response) => {
 /**
  * POST /vault/execute — Execute a transaction intent
  */
-app.post('/vault/execute', async (req: Request, res: Response) => {
+app.post('/vault/execute', authMiddleware, async (req: Request, res: Response) => {
     const { agent_id, action, input_mint, output_mint, amount_lamports, destination, reasoning } = req.body;
 
     // Validate required fields
@@ -120,11 +128,11 @@ app.get('/vault/balance/:agentId', async (req: Request, res: Response) => {
 /**
  * GET /vault/wallet/:agentId — Get wallet address for agent
  */
-app.get('/vault/wallet/:agentId', (req: Request, res: Response) => {
+app.get('/vault/wallet/:agentId', async (req: Request, res: Response) => {
     const { agentId } = req.params;
 
     try {
-        const address = vault.getWalletAddress(agentId);
+        const address = await vault.getWalletAddress(agentId);
         return res.json({ agentId, address });
     } catch (error) {
         const msg = error instanceof Error ? error.message : 'Unknown error';
@@ -135,7 +143,7 @@ app.get('/vault/wallet/:agentId', (req: Request, res: Response) => {
 /**
  * POST /vault/policy — Register or update agent policy
  */
-app.post('/vault/policy', (req: Request, res: Response) => {
+app.post('/vault/policy', authMiddleware, async (req: Request, res: Response) => {
     const { agent_id, max_lamports_per_tx, allowed_programs, max_tx_per_minute } = req.body;
 
     if (!agent_id) {
@@ -143,7 +151,7 @@ app.post('/vault/policy', (req: Request, res: Response) => {
     }
 
     try {
-        vault.registerPolicy({
+        await vault.registerPolicy({
             agentId: agent_id,
             maxLamportsPerTx: max_lamports_per_tx || 500_000_000,
             allowedPrograms: allowed_programs || ['DFLOWxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'],
@@ -160,9 +168,9 @@ app.post('/vault/policy', (req: Request, res: Response) => {
 /**
  * GET /vault/policy/:agentId — Get current policy for agent
  */
-app.get('/vault/policy/:agentId', (req: Request, res: Response) => {
+app.get('/vault/policy/:agentId', async (req: Request, res: Response) => {
     const { agentId } = req.params;
-    const policy = vault.getPolicy(agentId);
+    const policy = await vault.getPolicy(agentId);
 
     if (!policy) {
         return res.status(404).json({ error: 'NO_POLICY', message: 'No policy registered for agent' });
@@ -174,9 +182,9 @@ app.get('/vault/policy/:agentId', (req: Request, res: Response) => {
 /**
  * GET /vault/agents — Get all registered agents
  */
-app.get('/vault/agents', (_req: Request, res: Response) => {
+app.get('/vault/agents', async (_req: Request, res: Response) => {
     try {
-        const policies = vault.getAllPolicies();
+        const policies = await vault.getAllPolicies();
         return res.json({ agents: policies });
     } catch (error) {
         const msg = error instanceof Error ? error.message : 'Unknown error';
@@ -187,9 +195,9 @@ app.get('/vault/agents', (_req: Request, res: Response) => {
 /**
  * POST /vault/pause/:agentId — Emergency pause an agent
  */
-app.post('/vault/pause/:agentId', (req: Request, res: Response) => {
+app.post('/vault/pause/:agentId', authMiddleware, async (req: Request, res: Response) => {
     const { agentId } = req.params;
-    const result = vault.pauseAgent(agentId);
+    const result = await vault.pauseAgent(agentId);
 
     if (!result) {
         return res.status(404).json({ error: 'NO_POLICY', message: 'No policy registered for agent' });
@@ -201,9 +209,9 @@ app.post('/vault/pause/:agentId', (req: Request, res: Response) => {
 /**
  * POST /vault/resume/:agentId — Resume a paused agent
  */
-app.post('/vault/resume/:agentId', (req: Request, res: Response) => {
+app.post('/vault/resume/:agentId', authMiddleware, async (req: Request, res: Response) => {
     const { agentId } = req.params;
-    const result = vault.resumeAgent(agentId);
+    const result = await vault.resumeAgent(agentId);
 
     if (!result) {
         return res.status(404).json({ error: 'NO_POLICY', message: 'No policy registered for agent' });
@@ -215,7 +223,7 @@ app.post('/vault/resume/:agentId', (req: Request, res: Response) => {
 /**
  * POST /vault/airdrop/:agentId — Request devnet airdrop (testing only)
  */
-app.post('/vault/airdrop/:agentId', async (req: Request, res: Response) => {
+app.post('/vault/airdrop/:agentId', authMiddleware, async (req: Request, res: Response) => {
     const { agentId } = req.params;
     const amount = req.body.amount || 2;
 
@@ -290,3 +298,4 @@ if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
 
 export default app;
 export { vault };
+// Forced reload to ingest new env vars

@@ -1,28 +1,13 @@
-import OpenAI from 'openai';
-import Anthropic from 'anthropic';
-import type { AgentDecision, LLMConfig, LLMProvider, ReasoningStep } from './types.js';
+import { generateObject } from 'ai';
+import { createOpenAI } from '@ai-sdk/openai';
+import { createAnthropic } from '@ai-sdk/anthropic';
+import { agentDecisionSchema, type AgentDecision, type LLMConfig, type LLMProvider, type ReasoningStep } from './types.js';
 
 const DEFAULT_OPENAI_MODEL = 'gpt-4o';
-const DEFAULT_ANTHROPIC_MODEL = 'claude-sonnet-4-20250514';
+const DEFAULT_ANTHROPIC_MODEL = 'claude-3-5-sonnet-20240620';
 
 const SYSTEM_PROMPT = `You are an autonomous DeFi trading agent running on Solana devnet.
 Your role is to analyze market context and decide whether to SWAP SOL for USDC (or vice versa).
-
-You MUST respond with a JSON object only. No prose, no markdown, no code fences.
-Required schema:
-{
-  "reasoning": "2-3 sentences explaining your decision",
-  "reasoningSteps": [
-    {"step": "Observing", "detail": "what you observed from the market and wallet data"},
-    {"step": "Analyzing", "detail": "your analysis of price signals and portfolio"},
-    {"step": "Deciding", "detail": "your final decision and why"}
-  ],
-  "action": "SWAP" | "HOLD",
-  "inputMint": "So11111111111111111111111111111111111111112",
-  "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1",
-  "amountLamports": <integer — lamports to swap, based on suggestedActionSol from context>,
-  "confidence": <float 0.0 to 1.0>
-}
 
 CONFIDENCE GUIDE (use this to calibrate your confidence score):
 - 0.0–0.4: Very uncertain, signals are absent or contradictory → HOLD
@@ -45,28 +30,26 @@ RULES:
 - If priceSignal is BEARISH or STRONG_BEARISH and canTrade is true → strong reason to SWAP (SOL→USDC)
 - If priceSignal is BULLISH or STRONG_BULLISH and canTrade is true → strong reason to SWAP (USDC→SOL)
 - Staying 100% in SOL with no activity is not a good strategy for a trading agent
-- You are on DEVNET — this is a safe sandbox, be decisive and act on your analysis
-- Output full JSON with all fields, even on HOLD`;
-
+- You are on DEVNET — this is a safe sandbox, be decisive and act on your analysis`;
 
 export class LLMClient {
-  private client: OpenAI | Anthropic;
+  private aiModel: any;
   private provider: LLMProvider;
-  private model: string;
 
   constructor(config: LLMConfig) {
     this.provider = config.provider;
-    this.model = config.model;
 
     if (config.provider === 'openai') {
-      console.log(`[LLMClient] Initializing with key prefix: ${config.apiKey.substring(0, 6)}...`);
-      this.client = new OpenAI({
+      const openai = createOpenAI({
         apiKey: config.apiKey,
-        baseURL: config.baseURL || undefined,
-        dangerouslyAllowBrowser: true, // Not in browser, but some environments need this for node
+        baseURL: config.baseURL,
       });
+      this.aiModel = openai(config.model || DEFAULT_OPENAI_MODEL);
     } else {
-      this.client = new Anthropic({ apiKey: config.apiKey });
+      const anthropic = createAnthropic({
+        apiKey: config.apiKey,
+      });
+      this.aiModel = anthropic(config.model || DEFAULT_ANTHROPIC_MODEL);
     }
   }
 
@@ -74,86 +57,17 @@ export class LLMClient {
    * Make a trading decision based on market context
    */
   async makeDecision(context: string, agentId: string): Promise<AgentDecision> {
-    if (this.provider === 'openai') {
-      return this.makeOpenAIDecision(context, agentId);
-    } else {
-      return this.makeAnthropicDecision(context, agentId);
-    }
-  }
-
-  private async makeOpenAIDecision(context: string, agentId: string): Promise<AgentDecision> {
-    const openai = this.client as OpenAI;
-
     try {
-      const response = await openai.chat.completions.create({
-        model: this.model || DEFAULT_OPENAI_MODEL,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: context }
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.7,
-      });
-
-      const content = response.choices[0]?.message?.content;
-      if (!content) {
-        throw new Error('Empty response from OpenAI');
-      }
-
-      return this.parseDecision(content, agentId);
-    } catch (error: any) {
-      console.error(`[LLMClient] Decision failure (${this.provider}): ${error.message}`);
-      if (error.status === 401) {
-        // Detailed log for debugging 401
-        console.error(`[LLMClient] Auth error! BaseURL: ${openai.baseURL}`);
-      }
-      return this.getPersonaFallback(agentId);
-    }
-  }
-
-  private async makeAnthropicDecision(context: string, agentId: string): Promise<AgentDecision> {
-    const anthropic = this.client as Anthropic;
-
-    try {
-      const response = await anthropic.messages.create({
-        model: this.model || DEFAULT_ANTHROPIC_MODEL,
-        max_tokens: 1024,
+      const { object } = await generateObject({
+        model: this.aiModel,
         system: SYSTEM_PROMPT,
-        messages: [
-          { role: 'user', content: context }
-        ],
+        prompt: context,
+        schema: agentDecisionSchema,
       });
 
-      const content = response.content[0];
-      if (!content || content.type !== 'text') {
-        throw new Error('Empty response from Anthropic');
-      }
-
-      return this.parseDecision(content.text, agentId);
+      return object;
     } catch (error: any) {
       console.error(`[LLMClient] Decision failure (${this.provider}): ${error.message}`);
-      return this.getPersonaFallback(agentId);
-    }
-  }
-
-  private parseDecision(content: string, agentId: string): AgentDecision {
-    try {
-      const parsed = JSON.parse(content);
-
-      // Validate and transform the response
-      const decision: AgentDecision = {
-        reasoning: parsed.reasoning || 'No reasoning provided',
-        reasoningSteps: this.normalizeReasoningSteps(parsed.reasoningSteps),
-        action: parsed.action || 'HOLD',
-        inputMint: parsed.inputMint,
-        outputMint: parsed.outputMint,
-        amountLamports: parsed.amountLamports || 0,
-        confidence: Math.min(1, Math.max(0, parsed.confidence || 0)),
-      };
-
-      return decision;
-    } catch (error) {
-      console.warn(`[LLMClient] Fallback triggered for ${agentId}`);
       return this.getPersonaFallback(agentId);
     }
   }
@@ -181,6 +95,7 @@ export class LLMClient {
           { timestamp: new Date().toISOString(), step: 'Deciding', detail: 'Holding position to wait for a clearer opportunity.' }
         ],
         action: 'HOLD',
+        amountLamports: 0,
         confidence: 0.95
       },
       'agent-rebalancer-03': {
@@ -202,27 +117,8 @@ export class LLMClient {
         { timestamp: new Date().toISOString(), step: 'Idle', detail: 'Awaiting new market signals.' }
       ],
       action: 'HOLD',
+      amountLamports: 0,
       confidence: 1.0
     };
-  }
-
-  private normalizeReasoningSteps(steps?: any[]): ReasoningStep[] {
-    if (!Array.isArray(steps) || steps.length === 0) {
-      return [
-        {
-          timestamp: new Date().toISOString(),
-          step: 'Default',
-          detail: 'No reasoning steps provided',
-        }
-      ];
-    }
-
-    return steps.map((s: any) => {
-      return {
-        timestamp: new Date().toISOString(),
-        step: s.step || s.Step || 'Step',
-        detail: s.detail || s.Detail || '',
-      };
-    });
   }
 }

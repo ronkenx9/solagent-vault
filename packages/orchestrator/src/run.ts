@@ -4,13 +4,13 @@ import { Orchestrator, createDefaultAgentConfigs } from './orchestrator.js';
 // import { Dashboard } from '@solagent/dashboard';
 
 // Check for required environment variables
-const requiredEnvVars = ['VAULT_MASTER_SEED'];
+const requiredEnvVars = ['MASTER_SEED'];
 const missing = requiredEnvVars.filter(v => !process.env[v]);
 
 if (missing.length > 0) {
   console.error(`\n❌ Missing required environment variables: ${missing.join(', ')}`);
   console.log(`\nPlease create a .env file with:`);
-  console.log(`  VAULT_MASTER_SEED="your 24-word mnemonic"`);
+  console.log(`  MASTER_SEED="your 24-word mnemonic"`);
   console.log(`  OPENAI_API_KEY="sk-..."`);
   console.log(`\nRun: pnpm generate-seed\n`);
   process.exit(1);
@@ -62,7 +62,10 @@ async function main() {
     // POST to vault-api so SSE clients (dashboard) receive the event
     fetch(`${VAULT_API}/vault/broadcast`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.VAULT_API_KEY}`
+      },
       body: JSON.stringify(event),
     }).catch((err) => {
       console.warn(`[Orchestrator] Failed to broadcast event: ${err.message}`);
@@ -81,12 +84,15 @@ async function main() {
 
   // Sync active agents to the Vault API so the Dashboard dynamically renders them
   for (const agent of orchestrator.getAllAgentStatuses()) {
-    const policy = orchestrator.getVault().getPolicy(agent.id);
+    const policy = await orchestrator.getVault().getPolicy(agent.id);
     if (policy) {
       try {
         await fetch(`${VAULT_API}/vault/policy`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.VAULT_API_KEY}`
+          },
           body: JSON.stringify({
             agent_id: policy.agentId,
             max_lamports_per_tx: policy.maxLamportsPerTx,

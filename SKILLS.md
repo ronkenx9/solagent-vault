@@ -1,118 +1,84 @@
-# SKILLS.md — SolAgent Vault
+---
+name: solagent-vault-integration
+description: Comprehensive guidance for integrating an AI Agent with the SolAgent Vault API. Use this to construct JSON payloads representing trading intents.
+license: MIT
+metadata:
+  author: SolAgent Team
+  version: "1.0.0"
+tags:
+  - solana
+  - agentic-wallet
+  - defi
+  - solagent
+  - trading-bot
+---
 
-> This file describes the capabilities and interfaces available to AI agents interacting with this system.
+# SolAgent Vault Integration Skill
 
-## Capabilities
+This skill teaches AI agents how to interact with the SolAgent Vault API. The Vault API is a secure execution layer that takes intents from an AI agent, validates them against security policies, and securely signs the underlying transactions.
 
-### 🔐 vault-service
-Handles secure key management and transaction execution for autonomous agents.
+**Base URL:** (Local Dev) `http://localhost:3000`
 
-**Functions available:**
-- `getWalletAddress(agentId)` — Returns the agent's derived public key (read-only, safe to expose)
-- `getBalance(agentId)` → `{ sol: number, tokens: Record<string, number> }` — Fetches live on-chain balance
-- `execute(intent)` — Submits a transaction intent; the vault enforces policy before signing
-- `requestAirdrop(agentId, amount)` — Requests devnet SOL from the faucet
-- `pauseAgent(agentId)` / `resumeAgent(agentId)` — Emergency controls
+## Your Role as an Agent
+You do NOT need to hold a private key. You do NOT need to construct complex serialized Solana transactions. 
+Your only job is to emit a strictly formatted JSON "Intent" payload. The Vault API handles the rest.
 
-**Transaction Intent Schema:**
-```typescript
-{
-  agentId: string;         // e.g. "agent-momentum-01"
-  action: 'SWAP' | 'TRANSFER' | 'STAKE';
-  destinationProgram: string;   // must be in allowedPrograms policy
-  lamports: number;             // must not exceed maxLamportsPerTx policy
-  reasoning: string;            // human-readable reason (logged)
-  inputMint?: string;           // for SWAP
-  outputMint?: string;          // for SWAP
-}
+## Core Endpoint: Execute Intent
+
+**Endpoint:** `POST /vault/execute`
+**Description:** Submits a trading intent for evaluation and execution.
+**Headers:**
+```http
+Content-Type: application/json
+Authorization: Bearer <VAULT_API_KEY>
 ```
 
-**Policy Enforcement (automatic, cannot be bypassed):**
-- `maxLamportsPerTx` — Hard cap on spend per transaction
-- `allowedPrograms` — Whitelist of program IDs that can be called
-- `maxTxPerMinute` — Rate limiter to prevent runaway spending
+### Request Payload Schema
+Your JSON payload MUST match this Zod schema exactly:
 
----
-
-### 🛡️ Human-in-the-Loop Governance
-The Vault exposes endpoints for human overseers to manage agent risk dynamically.
-
-**Governance Endpoints:**
-- `POST /vault/policy` — Updates an agent's policy (e.g. increase/decrease spending cap)
-- `POST /vault/pause/:agentId` — Instantly halts all transaction signing for an agent
-- `POST /vault/resume/:agentId` — Restores transaction capabilities
-
-**Dashboard Interaction:**
-- **Level Up**: Increases `maxLamportsPerTx` via the policy API.
-- **Level Down**: Decreases `maxLamportsPerTx` via the policy API.
-
----
-
-### 🧠 agent-brain
-The LLM-driven decision loop for an autonomous trading agent.
-
-**Inputs it receives each tick:**
 ```json
 {
-  "wallet": {
-    "address": "<pubkey>",
-    "solBalance": 2.5,
-    "portfolioValueUsd": "350.00",
-    "tokens": {}
-  },
-  "market": {
-    "solPriceUsd": 140,
-    "solChange1h": -0.8,
-    "solChange24h": -2.1,
-    "priceSignal": "BEARISH",
-    "bestSwapRoute": { "inAmount": "10000000", "outAmount": "1392450", ... }
-  },
-  "tradingHints": {
-    "canTrade": true,
-    "suggestedActionSol": 0.25,
-    "momentumFavorable": false
-  }
+  "agentId": "string (Your unique identifier)",
+  "reasoning": "string (Human-readable reasoning log)",
+  "reasoningSteps": [
+    {
+      "timestamp": "string (ISO 8601)",
+      "step": "string (e.g. 'Observing', 'Analyzing')",
+      "detail": "string (Explanation of step)"
+    }
+  ],
+  "action": "SWAP" | "HOLD" | "TRANSFER",
+  "inputMint": "string (Solana Mint Address of token to sell)",
+  "outputMint": "string (Solana Mint Address of token to buy)",
+  "amountLamports": 10000000,
+  "confidence": 0.85
 }
 ```
 
-**Output decision schema:**
-```typescript
-{
-  action: 'SWAP' | 'HOLD' | 'TRANSFER';
-  reasoning: string;        // must explain the decision
-  confidence: number;       // 0.0 to 1.0
-  amountLamports?: number;  // lamports to swap (if action=SWAP)
-  inputMint?: string;
-  outputMint?: string;
-}
+### Example Request
+If you determine that momentum is shifting and you should swap 0.01 SOL on Devnet:
+
+```curl
+curl -X POST http://localhost:3000/vault/execute \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer <VAULT_API_KEY>" \
+     -d '{
+       "agentId": "agent-momentum-01",
+       "reasoning": "Momentum is strong, requesting swap.",
+       "reasoningSteps": [
+         {"timestamp": "2024-01-01T12:00:00Z", "step": "Observing", "detail": "Price went up"}
+       ],
+       "action": "SWAP",
+       "inputMint": "So11111111111111111111111111111111111111112",
+       "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1",
+       "amountLamports": 10000000,
+       "confidence": 0.85
+     }'
 ```
 
-**Agent Strategies:**
-| Strategy | Confidence Threshold | Max Swap | Persona |
-|---|---|---|---|
-| MOMENTUM_TRADER | 0.6 | 20% of balance | Aggressive, acts on momentum |
-| CONSERVATIVE_HOLDER | 0.8 | 5% of balance | Cautious, needs strong signal |
-| REBALANCER | 0.7 | 10% of balance | Balanced, portfolio-focused |
+## Security & Rate Limiting
+If your `amountLamports` exceeds your assigned policy's `maxLamportsPerTx`, the Vault Engine will REJECT the request.
+If you submit duplicate intents within a 30-second window, you may hit the internal rate limit shields.
 
----
-
-### 📡 vault-api Events (SSE)
-Connect to `GET /vault/events` to receive real-time events:
-
-| Event Type | Payload |
-|---|---|
-| `tick` | `{ balance, timestamp }` |
-| `reasoning` | `{ decision, context, timestamp }` |
-| `decision` | `{ action, reason, timestamp }` |
-| `tx_executed` | `{ intent, signature, timestamp }` |
-| `tx_blocked` | `{ intent, reason, timestamp }` |
-| `error` | `{ error, timestamp }` |
-
----
-
-## Security Model
-
-- **Private keys never leave the vault-core process** — agents receive only signed transactions
-- **HD wallet derivation** — each agent gets a unique sub-wallet from a single master seed
-- **Policy engine** — operates as a trust boundary; the LLM cannot bypass spending limits
-- **Devnet isolation** — all testing runs on Solana devnet; no mainnet funds at risk
+## Devnet Fallback
+On Devnet, due to liquidity limitations, submitting a `SWAP` action with `So11111111111111111111111111111111111111112` natively defaults to securely wrapping the SOL into WSOL via the official SPL Token Program. This ensures your integration functions fully regardless of external Devnet API stability.

@@ -17,6 +17,7 @@
     "generate-seed": "pnpm --filter @solagent/shared generate-seed"
   },
   "devDependencies": {
+    "tsx": "^4.21.0",
     "typescript": "^5.3.3"
   },
   "engines": {
