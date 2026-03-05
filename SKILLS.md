@@ -1,84 +1,117 @@
 ---
 name: solagent-vault-integration
-description: Comprehensive guidance for integrating an AI Agent with the SolAgent Vault API. Use this to construct JSON payloads representing trading intents.
-license: MIT
-metadata:
-  author: SolAgent Team
-  version: "1.0.0"
-tags:
-  - solana
-  - agentic-wallet
-  - defi
-  - solagent
-  - trading-bot
+description: Agent-to-Agent API Contract for executing secure swaps, transfers, and portfolio management via the SolAgent Vault isolated execution environment.
+version: 1.0.0
+schema_version: 2.0
+author: SolAgent Team
+capabilities:
+  - execute_transaction
+  - query_portfolio
+  - evaluate_risk
+authentication: bearer_token
 ---
 
-# SolAgent Vault Integration Skill
+# SolAgent Vault: Machine-Readable Agent Contract
 
-This skill teaches AI agents how to interact with the SolAgent Vault API. The Vault API is a secure execution layer that takes intents from an AI agent, validates them against security policies, and securely signs the underlying transactions.
+This document serves as the formal Tool Call specification and JSON Schema contract for autonomous agents interfacing with the SolAgent Vault.
 
-**Base URL:** (Local Dev) `http://localhost:3000`
+Foreign agents (LLMs) parsing this file MUST use the following JSON schemas when assembling tool execution payloads to `http://localhost:3000/vault/execute`.
 
-## Your Role as an Agent
-You do NOT need to hold a private key. You do NOT need to construct complex serialized Solana transactions. 
-Your only job is to emit a strictly formatted JSON "Intent" payload. The Vault API handles the rest.
+## 1. System Architecture & Trust Boundary
 
-## Core Endpoint: Execute Intent
+You are an Autonomous Agent (`System A`). You do NOT possess a private key. You cannot sign transactions directly.
+
+Your counterpart is the SolAgent Vault (`System B`). The Vault holds the Turnkey Multi-Party Computation (MPC) enclaves and enforces strict risk policies (e.g., `spending_limits`, `allowed_tokens`).
+
+**Your objective:** Submit a strictly typed *Intent* to System B. System B will evaluate your reasoning against its internal security policies. If the intent is cryptographically safe and within limits, System B will autonomously sign and broadcast the transaction to the Solana blockchain.
+
+---
+
+## 2. API Capabilities & OpenRPC Schemas
+
+### Capability: `Execute_Intent`
+
+Submit an explicit, reasoned request to mutate on-chain state (e.g., SWAP tokens or TRANSFER funds).
 
 **Endpoint:** `POST /vault/execute`
-**Description:** Submits a trading intent for evaluation and execution.
-**Headers:**
-```http
-Content-Type: application/json
-Authorization: Bearer <VAULT_API_KEY>
-```
+**Headers Required:**
+- `Content-Type: application/json`
+- `Authorization: Bearer <API_KEY>`
 
-### Request Payload Schema
-Your JSON payload MUST match this Zod schema exactly:
-
+**JSON Schema Definition (Input):**
 ```json
 {
-  "agentId": "string (Your unique identifier)",
-  "reasoning": "string (Human-readable reasoning log)",
-  "reasoningSteps": [
-    {
-      "timestamp": "string (ISO 8601)",
-      "step": "string (e.g. 'Observing', 'Analyzing')",
-      "detail": "string (Explanation of step)"
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VaultExecutionIntent",
+  "type": "object",
+  "required": ["agentId", "action", "inputMint", "outputMint", "amountLamports", "confidence", "reasoning"],
+  "properties": {
+    "agentId": {
+      "type": "string",
+      "description": "Your unique agent identifier registered in the Vault's Supabase instance."
+    },
+    "action": {
+      "type": "string",
+      "enum": ["SWAP", "TRANSFER", "HOLD"],
+      "description": "The discrete on-chain action to execute."
+    },
+    "inputMint": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$",
+      "description": "Base58 Solana public key of the token to spend (e.g., 'So111111111...')."
+    },
+    "outputMint": {
+      "type": "string",
+      "pattern": "^[1-9A-HJ-NP-Za-km-z]{32,44}$",
+      "description": "Base58 Solana public key of the token to receive."
+    },
+    "amountLamports": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Raw underlying token amount to spend, expressed in the token's smallest unit (e.g., Lamports for SOL)."
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "The normalized confidence score of this decision."
+    },
+    "reasoning": {
+      "type": "string",
+      "description": "A comprehensive, human-readable justification detailing exactly why this intent was formed based on on-chain state."
+    },
+    "reasoningSteps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["timestamp", "step", "detail"],
+        "properties": {
+          "timestamp": { "type": "string", "format": "date-time" },
+          "step": { "type": "string" },
+          "detail": { "type": "string" }
+        }
+      },
+      "description": "An optional execution trace demonstrating your internal chain-of-thought to the Vault Rule Engine."
     }
-  ],
-  "action": "SWAP" | "HOLD" | "TRANSFER",
-  "inputMint": "string (Solana Mint Address of token to sell)",
-  "outputMint": "string (Solana Mint Address of token to buy)",
-  "amountLamports": 10000000,
-  "confidence": 0.85
+  }
 }
 ```
 
-### Example Request
-If you determine that momentum is shifting and you should swap 0.01 SOL on Devnet:
+### Capability: `Query_Status` (Server-Sent Events)
 
-```curl
-curl -X POST http://localhost:3000/vault/execute \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer <VAULT_API_KEY>" \
-     -d '{
-       "agentId": "agent-momentum-01",
-       "reasoning": "Momentum is strong, requesting swap.",
-       "reasoningSteps": [
-         {"timestamp": "2024-01-01T12:00:00Z", "step": "Observing", "detail": "Price went up"}
-       ],
-       "action": "SWAP",
-       "inputMint": "So11111111111111111111111111111111111111112",
-       "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1",
-       "amountLamports": 10000000,
-       "confidence": 0.85
-     }'
-```
+Agents may passively monitor the status of their submitted intents via SSE streams to detect when the Vault Rule Engine approves, rejects, or finalizing the transaction on-chain.
 
-## Security & Rate Limiting
-If your `amountLamports` exceeds your assigned policy's `maxLamportsPerTx`, the Vault Engine will REJECT the request.
-If you submit duplicate intents within a 30-second window, you may hit the internal rate limit shields.
+**Endpoint:** `GET /vault/events`
+**Expected Feed:** `text/event-stream`
 
-## Devnet Fallback
-On Devnet, due to liquidity limitations, submitting a `SWAP` action with `So11111111111111111111111111111111111111112` natively defaults to securely wrapping the SOL into WSOL via the official SPL Token Program. This ensures your integration functions fully regardless of external Devnet API stability.
+---
+
+## 3. Threat Modeling & Rejection Codes
+
+If your Intent is rejected by the Vault, it is because you violated the isolated security perimeter. You must swallow these errors gracefully.
+
+**Common HTTP 400 rejection conditions:**
+- `POLICY_VIOLATION_AMOUNT`: You requested to swap `amountLamports` greater than your specific Agent's maximum allowed ticket size.
+- `POLICY_VIOLATION_TOKEN`: You requested an `inputMint` or `outputMint` that is not on your Agent's whitelist.
+- `RATE_LIMIT_EXCEEDED`: The Vercel Gateway or native Express global shield drops your request due to spam (Limit: 5 requests per second for execute endpoint).
+- `TURNKEY_SIGNATURE_FAILED`: The Secure Enclave rejected the transaction payload structure.

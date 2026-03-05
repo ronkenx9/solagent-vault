@@ -106,33 +106,29 @@ Open [http://localhost:3001](http://localhost:3001) to see the live RPG dashboar
 
 ---
 
-## 🧠 Deep Dive: Agentic Wallet Architecture
+## 🧠 Deep Dive: Security Architecture & Threat Model
 
-### 1. The KeyManager Abstraction (Safe Key Management)
-A fundamental requirement for agentic wallets is that the AI **never** holds the private key. In SolAgent Vault, all key operations are abstracted behind a `KeyManager` interface. 
-- The `agent-brain` (which runs the LLM and processes market context) only knows its `agentId`.
-- The `vault-core` binds this `agentId` to a specific Keypair.
-- **Enterprise MPC**: Setting `USE_TURNKEY=true` dynamically swaps the standard local keys for the `TurnkeyKeyManager`. The Vault constructs *unsigned* Solana transactions and broadcasts them to Turnkey's secure Multi-Party Computation enclaves. The private keys physically never touch the node server environment.
+The SolAgent Vault is not just a hot wallet script; it is a **secure execution environment** designed for autonomous agents. We enforce spending limits at the wallet layer, not the agent layer, ensuring that even a compromised LLM cannot drain the treasury.
 
-### 2. Strict LLM Schema Enforcement
-Fragile JSON parsing is the enemy of autonomous agents. The `agent-brain` utilizes the **Vercel AI SDK** and **Zod Object Schemas** to enforce that the LLM (llama-3.3-70b-versatile via Groq) strictly outputs valid commands. 
-If the LLM hallucinates an action or malforms the payload, the SDK automatically rejects and retries the generation. This guarantees the `Vault` only receives deterministic `SWAP`, `TRANSFER`, or `HOLD` commands.
+### 1. The Trust Boundary (Agent vs. Vault)
+The architecture enforces a strict one-way flow of intent across a defined trust boundary:
+- **Untrusted Zone (Agent Brain):** The LLM (llama-3.3-70b) reads on-chain data and evaluates pricing momentum. It emits a *strictly typed JSON intent* (e.g., `{"action": "SWAP", "amount": 10}`). The agent has **no access** to the private key.
+- **Trusted Zone (Vault API & Core):** The Vault authenticates the intent via Bearer Tokens, cross-references the requested `amountLamports` against the hardcoded Security Policy Engine, and securely constructs the Solana transaction.
 
-### 3. Clear Separation of Responsibilities
-The architecture enforces a strict one-way flow of intent:
-1. **Agent Brain (Untrusted):** Evaluates pricing, reads market moving averages, and emits a JSON trading intent.
-2. **Vault API (Transport):** Authenticates the request via Bearer Tokens and passes it to the Core.
-3. **Vault Core (Trusted):** Validates the intent against hardcoded policies (e.g. `maxLamportsPerTx`), constructs the specific Solana transaction, simulates it, and signs it via the `KeyManager`.
+### 2. Threat Modeling: Compromised Agents & Spending Limits
+*What happens if the LLM hallucinates, or if the Groq API key is compromised and a malicious actor prompts the agent to drain the wallet?*
+- **The LLM cannot formulate arbitrary transactions.** It can only pick from a Zod schema (`SWAP`, `TRANSFER`, `HOLD`).
+- **Spending Limits at the Wallet Layer:** Even if the LLM tries to send 1000 SOL, the `vault-core` Rule Engine will intercept the payload and hard-reject it because it exceeds the `maxLamportsPerTx` policy constraint. 
+- **Simulate-before-Sign:** The Vault performs a `simulateTransaction` check on Devnet RPC. If the transaction would fail or exceed slippage, the Vault drops the payload *before* signing, saving gas.
 
-### 4. Simulate-Before-Sign Security
-Before the `KeyManager` ever touches a transaction, the `Signer` executes a `simulateTransaction` call against the Devnet RPC. If the simulated transaction throws an error (e.g. insufficient funds, slippage exceeded, invalid instruction), the payload is dropped explicitly. This prevents the agent from broadcasting reverting transactions and wasting gas.
+### 3. Safe Key Management (Enterprise MPC Enclaves)
+A fundamental requirement for agentic wallets is that the AI **never** holds the private key.
+- In `local` mode, `KeyManager` derives HD wallets dynamically on the fly per agent.
+- In `production` mode, setting `USE_TURNKEY=true` dynamically swaps the standard keys for the `TurnkeyKeyManager`. The Vault constructs *unsigned* Solana transactions and broadcasts them to Turnkey's secure Multi-Party Computation (MPC) hardware enclaves. The private keys physically never touch the node server environment.
 
-### 5. Multi-Key Sandbox Isolation (Supabase)
-Instead of relying on a single master API key and volatile in-memory maps for policies, the Vault implements a resilient Postgres Database layer via Supabase. Every agent is isolated behind its own unique `api_key`. The `vault-api` actively queries the database via `authMiddleware` on every trade intent, guaranteeing a leaked API key cannot compromise the entire system.
-
-### 6. Endpoint & Orchestrator Safety
-- **Network Shielding:** The API endpoints are defended by `express-rate-limit`. The sensitive transaction mutation endpoint `POST /vault/execute` enforces a hard limit of 5 requests per second to prevent RPC flooding.
-- **Race Condition Prevention:** The Agent Brain operates on a rigid asynchronous `isProcessing` lock. During times of severe Solana network congestion, the orchestrator stubbornly waits for the previous transaction to finish broadcasting and confirming on the blockchain before the LLM is permitted to generate a new intent.
+### 4. Multi-Agent Coordination at Scale
+The bounty requires handling multiple agents. The SolAgent Orchestrator asynchronously queries `N` unique Agent Profiles (e.g., BLADE, WARD, SAGE) from a Supabase PostgreSQL instance. 
+Each agent receives a dynamically derived wallet (via an HD derivation path based on its `agentId`). This means a single Master Seed spawns an infinite number of perfectly isolated agent wallets, proving the architecture scales from 1 agent to 10,000 agents without overhead.
 
 ---
 
